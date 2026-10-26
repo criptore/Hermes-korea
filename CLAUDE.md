@@ -20,6 +20,9 @@ avant toute soumission.
    **consentis** par Joshua (PYTHIA via Ollama, juge Laya de KRINOS depuis
    Hugging Face, version épinglée + SHA-256). Laya s'exécute en local (ONNX
    Runtime) : aucune donnée d'AO ne quitte la machine.
+   Mise à jour de l'app (macOS) : lecture de `latest.json` sur les Releases
+   GitHub **uniquement sur clic** (ou si l'utilisateur active la vérification
+   au démarrage, désactivée par défaut) ; archive vérifiée par signature minisign.
 2. **Validation humaine obligatoire** — la soumission finale d'une réponse à un
    AO est *exclusivement* humaine, sans exception. HERMION rédige, ne soumet
    jamais.
@@ -313,6 +316,11 @@ d'annoncer une avancée.
   `~/.ollama/models` (partagés avec l'app Ollama).
 - Pas de Job Object : le backend surveille `HERMES_PARENT_PID`
   (`hermes/surveillance_parent.py`) et s'arrête avec l'app.
+- Mise à jour intégrée : plugin updater Tauri (`lib/miseAJour.ts`, Paramètres →
+  Desktop app → Updates). Le workflow `macos-bundle.yml` publie DMG, archives
+  `.app.tar.gz` signées et `latest.json` sur tag `v*` ; clé privée dans les
+  secrets `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)`, clé publique dans
+  `tauri.conf.json`. Publier : `sync-version.sh X.Y.Z`, PR, merge, tag `vX.Y.Z`.
 - Détails, signature et notarisation : `docs/macos.md`. CI : jobs
   `desktop-macos` (ci.yml) et workflow `macos-bundle.yml` (DMG + test de fumée).
 

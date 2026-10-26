@@ -28,6 +28,8 @@ export type PreferencesBureau = {
   reduireDansTray: boolean;
   /** Reflet de la pause ARGOS (menu « Mettre en pause » du tray) : coupe aussi les notifications. */
   pause: boolean;
+  /** Vérifie les mises à jour HERMES au démarrage (appel externe : désactivé par défaut). */
+  verifierMajAuDemarrage: boolean;
 };
 
 const PREFS_KEY = "hermes.preferencesBureau";
@@ -39,6 +41,7 @@ const PREFS_DEFAUT: PreferencesBureau = {
   panneArgos: true,
   reduireDansTray: false,
   pause: false,
+  verifierMajAuDemarrage: false,
 };
 
 export function chargerPreferencesBureau(): PreferencesBureau {

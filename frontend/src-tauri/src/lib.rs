@@ -823,6 +823,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
+        // Mise à jour intégrée : uniquement sur action de l'utilisateur (ou s'il a
+        // activé la vérification au démarrage), archive vérifiée par signature minisign.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         // Mémorise taille, position et état maximisé. VISIBLE est exclu : une fenêtre
         // réduite dans le tray à la fermeture doit réapparaître au prochain lancement.
         .plugin(

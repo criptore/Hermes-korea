@@ -57,8 +57,9 @@ or delete it.
 1. **Install Ollama** (PYTHIA's engine): download the app from
    <https://ollama.com/download> and move it to *Applications*
    (or `brew install ollama`).
-2. **Download** `HERMES-<version>-macos-<arch>.dmg` (`arm64` for Apple Silicon,
-   `x86_64` for Intel), open it and drag **HERMES** onto **Applications**.
+2. **Download** `HERMES-<version>-macos-<arch>.dmg` from the repository's
+   **Releases** page (`arm64` for Apple Silicon, `x86_64` for Intel), open it and
+   drag **HERMES** onto **Applications**.
 3. **First launch:** the build is ad-hoc signed (not notarised), so macOS blocks
    the first opening. Right-click HERMES → *Open*, or on macOS 15+ go to
    *System Settings → Privacy & Security → Open Anyway*. Command-line
@@ -68,6 +69,10 @@ or delete it.
 
 User data lives in `~/Library/Application Support/HERMES`. Models stay in
 Ollama's default folder (`~/.ollama/models`), shared with the Ollama app.
+
+**Updates (macOS):** *Settings → Desktop app → Updates → Check for updates*
+downloads, verifies (signature) and installs the new version, then restarts —
+no need to download the DMG again.
 
 On both platforms, closing HERMES stops the backend and any Ollama instance it
 started; an Ollama that was already running is left alone.
@@ -220,7 +225,9 @@ default, Developer ID with `APPLE_SIGNING_IDENTITY`) and produces
 `installer/dist/HERMES-<version>-macos-<arch>.dmg`. `scripts/smoke-macos.sh`
 checks that the app starts its bundled backend and that the backend stops when
 the app dies. The *macOS bundle* GitHub workflow runs both on every relevant
-change and publishes the DMG as an artifact. Details, signing and notarisation:
+change and publishes the DMGs as artifacts; pushing a `vX.Y.Z` tag also
+publishes them in a GitHub Release (`./scripts/sync-version.sh X.Y.Z`, merge,
+then `git tag vX.Y.Z && git push origin vX.Y.Z`). Details, signing and notarisation:
 [`docs/macos.md`](docs/macos.md).
 
 ---

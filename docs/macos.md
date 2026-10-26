@@ -89,17 +89,54 @@ The pipeline:
 5. `hdiutil` builds `installer/dist/HERMES-<version>-macos-<arch>.dmg` with an
    *Applications* shortcut.
 
-The DMG targets the build machine's architecture. Build on an Apple Silicon Mac
-for `arm64` and on an Intel Mac (or an x86_64 Python under Rosetta) for `x86_64`:
-a universal binary would need a universal2 Python for PyInstaller and is left for
+The DMG targets the build machine's architecture (the CI builds both). Locally,
+build on an Apple Silicon Mac for `arm64` and on an Intel Mac for `x86_64`: a
+universal binary would need a universal2 Python for PyInstaller and is left for
 later.
 
 `smoke-macos.sh` starts the built app with an isolated data folder, waits for the
 bundled backend on `127.0.0.1:8000`, checks `/health` and that MNEMOSYNE was
 created, then kills the app with `SIGKILL` and checks that the backend stops on
 its own. The *macOS bundle* GitHub workflow (`.github/workflows/macos-bundle.yml`)
-runs the build and this smoke test on Apple Silicon runners and uploads the DMG
-as an artifact.
+runs the build and this smoke test on Apple Silicon and Intel runners and uploads
+both DMGs as artifacts. On a `vX.Y.Z` tag, a `release` job publishes them in a
+GitHub Release:
+
+```bash
+./scripts/sync-version.sh 1.2.0     # then commit, PR, merge
+git tag v1.2.0 && git push origin v1.2.0
+```
+
+## In-app updates
+
+Once HERMES is installed, new versions install from the app itself:
+*Settings → Desktop app → Updates → Check for updates*, then *Install and
+restart*. HERMES reads `latest.json` from the latest GitHub Release, downloads the
+archive for your Mac (`HERMES_<version>_<aarch64|x86_64>.app.tar.gz`), checks its
+**minisign signature** against the public key embedded in the app
+(`plugins.updater` in `tauri.conf.json`), replaces `HERMES.app`, stops the
+backend and PYTHIA and restarts. User data in `~/Library/Application Support/HERMES`
+is untouched.
+
+This is HERMES's only network call besides tender portals and consented model
+downloads: it only happens when you click *Check for updates*, or at startup if
+you enable *Check for updates at startup* (off by default). Nothing about your
+data is sent.
+
+### Publishing an update
+
+1. One-time setup — repository secrets (*Settings → Secrets and variables →
+   Actions*): `TAURI_SIGNING_PRIVATE_KEY` (content of the private key file) and
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. The matching public key is already in
+   `tauri.conf.json`. Losing the private key means installed apps can no longer
+   update (a new key needs a manual DMG install once).
+2. `./scripts/sync-version.sh X.Y.Z`, commit, PR, merge.
+3. `git tag vX.Y.Z && git push origin vX.Y.Z` — the *macOS bundle* workflow
+   builds both architectures, signs the update archives and publishes the DMGs,
+   the archives and `latest.json` in the GitHub Release.
+
+Locally, `build-macos.sh` also produces the signed archive when
+`TAURI_SIGNING_PRIVATE_KEY` (and its password) are set in the environment.
 
 ### Signing and notarisation (optional)
 

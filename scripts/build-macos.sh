@@ -8,6 +8,8 @@
 #      symboliques et signatures conservés)
 #   4. signature : ad hoc par défaut, Developer ID si APPLE_SIGNING_IDENTITY
 #   5. image disque compressée                  → installer/dist/
+#   6. si TAURI_SIGNING_PRIVATE_KEY est défini : archive de mise à jour
+#      HERMES_<version>_<arch>.app.tar.gz + signature .sig (plugin updater)
 #
 # Ollama n'est pas embarqué : l'utilisateur installe l'app Ollama (ollama.com),
 # que HERMES détecte et démarre au besoin.
@@ -85,6 +87,20 @@ rm -f "$DMG"
 hdiutil create -volname "HERMES $VERSION" -srcfolder "$TMP" -ov -format UDZO "$DMG" >/dev/null
 if [[ "$IDENTITE" != "-" ]]; then
   codesign --force --timestamp --sign "$IDENTITE" "$DMG"
+fi
+
+# 6. Archive de mise à jour intégrée, signée (clé minisign du plugin updater).
+if [[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+  case "$ARCH" in arm64) ARCH_TAURI=aarch64 ;; *) ARCH_TAURI="$ARCH" ;; esac
+  ARCHIVE="$SORTIE/HERMES_${VERSION}_${ARCH_TAURI}.app.tar.gz"
+  info "Creating the signed update archive"
+  rm -f "$ARCHIVE" "$ARCHIVE.sig"
+  COPYFILE_DISABLE=1 tar -czf "$ARCHIVE" -C "$(dirname "$APP")" HERMES.app
+  (cd "$FRONTEND" && npm run --silent tauri -- signer sign "$ARCHIVE" >/dev/null)
+  [[ -s "$ARCHIVE.sig" ]] || fatal "Update archive signature missing: $ARCHIVE.sig"
+  ok "Update: $ARCHIVE (+ .sig)"
+else
+  avert "TAURI_SIGNING_PRIVATE_KEY not set: no in-app update archive (see docs/macos.md)"
 fi
 
 ok "App : $APP"

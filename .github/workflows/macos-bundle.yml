@@ -1,7 +1,8 @@
 name: macOS bundle
 
-# Construit HERMES.app + DMG (backend PyInstaller embarqué), puis un test de
-# fumée : l'app démarre son backend, et celui-ci s'arrête quand l'app meurt.
+# Construit HERMES.app + DMG (backend PyInstaller embarqué) pour Apple Silicon et
+# Intel, puis un test de fumée : l'app démarre son backend, et celui-ci s'arrête
+# quand l'app meurt. Sur un tag `v*`, les DMG sont publiés dans une GitHub Release.
 on:
   workflow_dispatch:
   push:
@@ -25,7 +26,15 @@ concurrency:
 
 jobs:
   bundle:
-    runs-on: macos-latest  # Apple Silicon (arm64)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest      # Apple Silicon
+            arch: arm64
+          - runner: macos-15-intel    # Intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -46,12 +55,93 @@ jobs:
       - name: Build HERMES.app + DMG
         env:
           HERMES_PYTHON: python
+          # Clé minisign du plugin updater (secret du dépôt). Absente sur les PR de
+          # forks : le DMG est construit sans archive de mise à jour.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: ./scripts/build-macos.sh
+      - name: Check DMG architecture
+        run: test "$(uname -m)" = "${{ matrix.arch }}" && ls installer/dist/*-macos-${{ matrix.arch }}.dmg
       - name: Smoke test (bundled backend + parent watchdog)
         run: ./scripts/smoke-macos.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: HERMES-macos-arm64
-          path: installer/dist/*.dmg
+          name: HERMES-macos-${{ matrix.arch }}
+          path: |
+            installer/dist/*.dmg
+            installer/dist/*.app.tar.gz
+            installer/dist/*.app.tar.gz.sig
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    # Publie ce qui a été construit, même si une architecture a échoué.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') }}
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: HERMES-macos-*
+          merge-multiple: true
+          path: dist
+      - name: Require at least one DMG
+        run: ls -la dist/
+      # Manifeste lu par la mise à jour intégrée (plugin updater) :
+      # releases/latest/download/latest.json → archive signée par architecture.
+      - name: Build latest.json
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, pathlib
+          tag = os.environ["TAG"]
+          base = f"https://github.com/{os.environ['REPO']}/releases/download/{tag}"
+          plateformes = {}
+          for sig in sorted(pathlib.Path("dist").glob("*.app.tar.gz.sig")):
+              archive = sig.name[: -len(".sig")]
+              arch = archive.rsplit("_", 1)[1].split(".", 1)[0]   # aarch64 | x86_64
+              plateformes[f"darwin-{arch}"] = {
+                  "signature": sig.read_text().strip(),
+                  "url": f"{base}/{archive}",
+              }
+          if not plateformes:
+              print("No signed update archive: latest.json not published")
+              raise SystemExit(0)
+          manifeste = {
+              "version": tag.removeprefix("v"),
+              "notes": f"HERMES {tag}",
+              "pub_date": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": plateformes,
+          }
+          pathlib.Path("dist/latest.json").write_text(json.dumps(manifeste, indent=2))
+          print(json.dumps(manifeste, indent=2))
+          PY
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.dmg
+            dist/*.app.tar.gz
+            dist/latest.json
+          fail_on_unmatched_files: false
+          body: |
+            ## HERMES ${{ github.ref_name }} — macOS
+
+            | Mac | File |
+            |---|---|
+            | Apple Silicon (M1–M4) | `HERMES-*-macos-arm64.dmg` |
+            | Intel | `HERMES-*-macos-x86_64.dmg` |
+
+            1. Install **Ollama** first: <https://ollama.com/download> (or `brew install ollama`).
+            2. Open the DMG and drag **HERMES** to **Applications**.
+            3. First launch: the app is ad-hoc signed (not notarised). Right-click HERMES → **Open**
+               (macOS 15+: *System Settings → Privacy & Security → Open Anyway*), or run
+               `xattr -dr com.apple.quarantine /Applications/HERMES.app`.
+
+            Already installed? Use **Settings → Desktop app → Updates → Check for updates**:
+            HERMES updates itself, no need to download the DMG again.
+
+            User data: `~/Library/Application Support/HERMES`. Full guide: `docs/macos.md`.
