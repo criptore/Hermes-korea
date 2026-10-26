@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import threading
 import time
 
 import pytest
@@ -73,8 +74,17 @@ def test_fichier_altere_de_meme_taille_refuse_au_chargement(modele_installe):
         assert len(session.exec(select(LogAgent)).all()) == 1
 
 
+def _attendre_verification_fond() -> None:
+    """Le démarrage de l'app lance une vérification SHA-256 en tâche de fond : on
+    l'attend, sinon elle peut finir après l'altération et changer l'erreur levée."""
+    for fil in threading.enumerate():
+        if fil.name == "laya-integrite":
+            fil.join(timeout=10)
+
+
 def test_api_marque_le_modele_a_reinstaller(modele_installe):
     with TestClient(app) as client:
+        _attendre_verification_fond()
         assert client.get("/krinos/laya/modele").json()["a_reinstaller"] == []
         _alterer_meme_taille()
         with pytest.raises(ModeleLayaAltere):
