@@ -27,6 +27,7 @@ import {
   synchroniserPauseTray,
 } from "./lib/desktop";
 import { useIntegrationBureau } from "./lib/useIntegrationBureau";
+import { verifierMiseAJour } from "./lib/miseAJour";
 import {
   isOnboardingDone,
   loadUserProfile,
@@ -254,6 +255,25 @@ function Coque() {
       });
     }
   }, [rafraichirScheduler]);
+
+  // Vérification des mises à jour au démarrage : seulement si l'utilisateur l'a activée
+  // (Paramètres → Desktop app) ; l'installation reste un clic explicite.
+  useEffect(() => {
+    if (!chargerPreferencesBureau().verifierMajAuDemarrage) return;
+    verifierMiseAJour()
+      .then((maj) => {
+        if (!maj) return;
+        setToast({
+          title: "HERMES",
+          app: `Update ${maj.version} available`,
+          msg: "Install it from Settings → Desktop app → Updates.",
+          agent: "argos",
+        });
+      })
+      .catch(() => {
+        // Hors ligne ou release indisponible : on réessaiera au prochain lancement.
+      });
+  }, []);
 
   // Intégration système (Tauri) : notifications, menu du tray. Inerte en mode web.
   useIntegrationBureau({

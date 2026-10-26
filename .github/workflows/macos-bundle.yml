@@ -55,6 +55,10 @@ jobs:
       - name: Build HERMES.app + DMG
         env:
           HERMES_PYTHON: python
+          # Clé minisign du plugin updater (secret du dépôt). Absente sur les PR de
+          # forks : le DMG est construit sans archive de mise à jour.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: ./scripts/build-macos.sh
       - name: Check DMG architecture
         run: test "$(uname -m)" = "${{ matrix.arch }}" && ls installer/dist/*-macos-${{ matrix.arch }}.dmg
@@ -63,7 +67,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: HERMES-macos-${{ matrix.arch }}
-          path: installer/dist/*.dmg
+          path: |
+            installer/dist/*.dmg
+            installer/dist/*.app.tar.gz
+            installer/dist/*.app.tar.gz.sig
           if-no-files-found: error
           retention-days: 14
 
@@ -81,11 +88,45 @@ jobs:
           merge-multiple: true
           path: dist
       - name: Require at least one DMG
-        run: ls -la dist/*.dmg
+        run: ls -la dist/
+      # Manifeste lu par la mise à jour intégrée (plugin updater) :
+      # releases/latest/download/latest.json → archive signée par architecture.
+      - name: Build latest.json
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, pathlib
+          tag = os.environ["TAG"]
+          base = f"https://github.com/{os.environ['REPO']}/releases/download/{tag}"
+          plateformes = {}
+          for sig in sorted(pathlib.Path("dist").glob("*.app.tar.gz.sig")):
+              archive = sig.name[: -len(".sig")]
+              arch = archive.rsplit("_", 1)[1].split(".", 1)[0]   # aarch64 | x86_64
+              plateformes[f"darwin-{arch}"] = {
+                  "signature": sig.read_text().strip(),
+                  "url": f"{base}/{archive}",
+              }
+          if not plateformes:
+              print("No signed update archive: latest.json not published")
+              raise SystemExit(0)
+          manifeste = {
+              "version": tag.removeprefix("v"),
+              "notes": f"HERMES {tag}",
+              "pub_date": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": plateformes,
+          }
+          pathlib.Path("dist/latest.json").write_text(json.dumps(manifeste, indent=2))
+          print(json.dumps(manifeste, indent=2))
+          PY
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.dmg
-          fail_on_unmatched_files: true
+          files: |
+            dist/*.dmg
+            dist/*.app.tar.gz
+            dist/latest.json
+          fail_on_unmatched_files: false
           body: |
             ## HERMES ${{ github.ref_name }} — macOS
 
@@ -99,5 +140,8 @@ jobs:
             3. First launch: the app is ad-hoc signed (not notarised). Right-click HERMES → **Open**
                (macOS 15+: *System Settings → Privacy & Security → Open Anyway*), or run
                `xattr -dr com.apple.quarantine /Applications/HERMES.app`.
+
+            Already installed? Use **Settings → Desktop app → Updates → Check for updates**:
+            HERMES updates itself, no need to download the DMG again.
 
             User data: `~/Library/Application Support/HERMES`. Full guide: `docs/macos.md`.

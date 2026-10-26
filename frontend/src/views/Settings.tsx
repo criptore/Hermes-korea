@@ -13,6 +13,14 @@ import {
   estTauri,
   type PreferencesBureau,
 } from "../lib/desktop";
+import {
+  installerMiseAJour,
+  miseAJourSupportee,
+  verifierMiseAJour,
+  versionActuelle,
+  type MiseAJourDisponible,
+  type ProgressionMiseAJour,
+} from "../lib/miseAJour";
 import { ProfilMetierSection } from "../components/ProfilMetierSection";
 import { WorkflowEditor, type WorkflowDraft } from "../components/WorkflowEditor";
 import {
@@ -2043,6 +2051,11 @@ const REGLAGES_BUREAU: { cle: keyof PreferencesBureau; label: string; hint: stri
     label: "Closing the window keeps HERMES in the menu bar / system tray",
     hint: "HERMES keeps watching; \"Quit\" (icon menu) stops everything",
   },
+  {
+    cle: "verifierMajAuDemarrage",
+    label: "Check for updates at startup",
+    hint: "Contacts GitHub Releases only (no HERMES data is sent). Off by default",
+  },
 ];
 
 function BureauSection() {
@@ -2062,6 +2075,7 @@ function BureauSection() {
         System notifications and menu bar / system tray icon. Everything stays local to this machine.
         {!bureau && " These settings only apply in the HERMES desktop app."}
       </p>
+      <MiseAJourCarte />
       {REGLAGES_BUREAU.map((r) => (
         <div className="settings-row" key={r.cle}>
           <div>
@@ -2079,5 +2093,114 @@ function BureauSection() {
         </div>
       ))}
     </div>
+  );
+}
+
+/** Mise à jour intégrée (macOS) : vérification sur clic, installation puis redémarrage. */
+function MiseAJourCarte() {
+  const [version, setVersion] = useState<string | null>(null);
+  const [etat, setEtat] = useState<
+    "inactif" | "verification" | "a_jour" | "disponible" | "installation" | "erreur"
+  >("inactif");
+  const [maj, setMaj] = useState<MiseAJourDisponible | null>(null);
+  const [progression, setProgression] = useState<ProgressionMiseAJour | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    versionActuelle()
+      .then(setVersion)
+      .catch(() => setVersion(null));
+  }, []);
+
+  if (!miseAJourSupportee()) return null;
+
+  const verifier = async () => {
+    setEtat("verification");
+    setErreur(null);
+    try {
+      const trouvee = await verifierMiseAJour();
+      setMaj(trouvee);
+      setEtat(trouvee ? "disponible" : "a_jour");
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+      setEtat("erreur");
+    }
+  };
+
+  const installer = async () => {
+    setEtat("installation");
+    setErreur(null);
+    try {
+      await installerMiseAJour(setProgression);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+      setEtat("erreur");
+    }
+  };
+
+  const pourcent =
+    progression?.total ? Math.min(100, (progression.recus / progression.total) * 100) : null;
+
+  return (
+    <section className="settings-carte" aria-label="Updates">
+      <div className="settings-carte__tete">
+        <div>
+          <div className="settings-row__label">Updates</div>
+          <div className="settings-row__hint">
+            Installed version: <strong>{version ?? "—"}</strong>. HERMES downloads the new
+            version from GitHub Releases, checks its signature, replaces the app and restarts —
+            no need to download the DMG again. Your data is kept.
+          </div>
+        </div>
+        <button
+          className="btn"
+          disabled={etat === "verification" || etat === "installation"}
+          onClick={() => void verifier()}
+        >
+          {etat === "verification" ? "Checking…" : "Check for updates"}
+        </button>
+      </div>
+
+      {etat === "a_jour" && <div className="settings-row__hint">HERMES is up to date.</div>}
+
+      {(etat === "disponible" || etat === "installation") && maj && (
+        <div>
+          <div className="settings-row__hint">
+            <strong>HERMES {maj.version}</strong> is available
+            {maj.date ? ` (published ${new Date(maj.date).toLocaleDateString("en-GB")})` : ""}.
+          </div>
+          {maj.notes && (
+            <details className="settings-carte__details">
+              <summary>Release notes</summary>
+              <div className="settings-row__hint" style={{ whiteSpace: "pre-line" }}>
+                {maj.notes}
+              </div>
+            </details>
+          )}
+          <div className="settings-carte__actions">
+            <button
+              className="btn btn--gold"
+              disabled={etat === "installation"}
+              onClick={() => void installer()}
+            >
+              {etat === "installation"
+                ? pourcent !== null
+                  ? `Downloading… ${pourcent.toFixed(0)}%`
+                  : "Installing…"
+                : "Install and restart"}
+            </button>
+            <span className="settings-row__hint">
+              HERMES stops its agents, installs the update and reopens.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {erreur && (
+        <div className="settings-row__hint" style={{ color: "var(--err)" }}>
+          Update failed: {erreur}
+        </div>
+      )}
+    </section>
   );
 }

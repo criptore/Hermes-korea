@@ -70,6 +70,10 @@ or delete it.
 User data lives in `~/Library/Application Support/HERMES`. Models stay in
 Ollama's default folder (`~/.ollama/models`), shared with the Ollama app.
 
+**Updates (macOS):** *Settings → Desktop app → Updates → Check for updates*
+downloads, verifies (signature) and installs the new version, then restarts —
+no need to download the DMG again.
+
 On both platforms, closing HERMES stops the backend and any Ollama instance it
 started; an Ollama that was already running is left alone.
 
