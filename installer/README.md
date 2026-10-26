@@ -1,5 +1,8 @@
 # Installeur HERMES
 
+> Windows uniquement. Pour macOS (HERMES.app + DMG), voir
+> [`docs/macos.md`](../docs/macos.md) et `scripts/build-macos.sh`.
+
 Pipeline qui produit `HERMES-Setup-<version>.exe`, un installeur Windows
 distribuable qui :
 

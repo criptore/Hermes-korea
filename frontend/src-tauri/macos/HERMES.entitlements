@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements HERMES pour une signature Developer ID avec Hardened Runtime
+  (notarisation). Inutiles en signature ad hoc (build local par défaut).
+  Le backend PyInstaller embarqué charge des bibliothèques Python/ONNX non
+  signées par Apple et a besoin de mémoire exécutable (ONNX Runtime).
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

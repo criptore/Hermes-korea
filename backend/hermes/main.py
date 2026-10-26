@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from hermes import __version__, onboarding
+from hermes import __version__, onboarding, surveillance_parent
 from hermes.agents.argos.scheduler import scheduler_global
 from hermes.agents.krinos import laya as laya_agent
 from hermes.agents.krinos import laya_modele
@@ -45,6 +45,8 @@ from hermes.db.session import get_engine, init_db
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # macOS / Linux : s'arrête avec l'app desktop qui l'a lancé (Windows : Job Object).
+    surveillance_parent.demarrer()
     settings.ensure_dirs()
     init_db()
     _migrer_onboarding()
