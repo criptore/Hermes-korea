@@ -177,12 +177,12 @@ async def choisir_modele(
 ) -> StatutModeleResponse:
     """Utilise un modèle DÉJÀ installé, sans rien télécharger (persisté en base)."""
     if not await pythia.est_disponible(timeout=2.0):
-        raise HTTPException(status_code=502, detail="Ollama/PYTHIA n'est pas joignable.")
+        raise HTTPException(status_code=502, detail="Ollama/PYTHIA is not reachable.")
     if not await pythia.modele_installe(payload.modele):
-        raise HTTPException(status_code=404, detail="Ce modèle n'est pas installé dans Ollama.")
+        raise HTTPException(status_code=404, detail="This model is not installed in Ollama.")
     settings.pythia_modele = payload.modele
     entree = session.get(Parametre, CLE_MODELE) or Parametre(
-        cle=CLE_MODELE, valeur=payload.modele, description="Modèle PYTHIA choisi"
+        cle=CLE_MODELE, valeur=payload.modele, description="Selected PYTHIA model"
     )
     entree.valeur = payload.modele
     entree.maj_le = datetime.now(UTC)
@@ -206,15 +206,15 @@ async def lancer_telechargement(
     if not payload.confirme:
         raise HTTPException(
             status_code=400,
-            detail="Téléchargement non confirmé : `confirme` doit valoir true.",
+            detail="Download not confirmed: `confirme` must be true.",
         )
     modele = payload.modele.strip()
     if not modele:
-        raise HTTPException(status_code=422, detail="Nom de modèle vide.")
+        raise HTTPException(status_code=422, detail="Empty model name.")
     if modele not in settings.pythia_modeles_proposes and not settings.pythia_modele_libre:
         raise HTTPException(
             status_code=403,
-            detail="Modèle hors de la liste proposée (option avancée désactivée).",
+            detail="Model not in the offered list (advanced option disabled).",
         )
 
     async with etat._lock:
@@ -224,7 +224,7 @@ async def lancer_telechargement(
         if not await pythia.est_disponible(timeout=2.0):
             raise HTTPException(
                 status_code=502,
-                detail="Ollama/PYTHIA n'est pas joignable sur 127.0.0.1:11434.",
+                detail="Ollama/PYTHIA is not reachable on 127.0.0.1:11434.",
             )
 
         # Réinitialise l'état pour ce nouveau téléchargement
@@ -287,7 +287,7 @@ async def _executer_telechargement(etat: EtatTelechargement, modele: str) -> Non
         etat.erreur = str(exc)
         etat.statut = "erreur"
     except Exception as exc:  # noqa: BLE001 — on capture tout pour ne pas geler l'état
-        etat.erreur = f"Erreur inattendue : {exc}"
+        etat.erreur = f"Unexpected error: {exc}"
         etat.statut = "erreur"
     finally:
         etat.en_cours = False

@@ -132,8 +132,8 @@ export function OnboardingWizard({ onDone }: Props) {
       setExclus(suggestion.exclus.join(", "));
       setSuggestionMsg(
         suggestion.raisonnement
-          ? `${suggestion.inclus.length} mots-clés inclus, ${suggestion.exclus.length} exclus proposés. ${suggestion.raisonnement}`
-          : `${suggestion.inclus.length} mots-clés inclus et ${suggestion.exclus.length} exclus proposés.`,
+          ? `${suggestion.inclus.length} include and ${suggestion.exclus.length} exclude keywords suggested. ${suggestion.raisonnement}`
+          : `${suggestion.inclus.length} include and ${suggestion.exclus.length} exclude keywords suggested.`,
       );
     } catch (e) {
       setErreur(e instanceof Error ? e.message : String(e));
@@ -148,7 +148,7 @@ export function OnboardingWizard({ onDone }: Props) {
         <div className="modal__head">
           <div className="modal__eyebrow">
             <HermesMark size={14} />
-            <span>HERMES · Premier lancement — étape {step}/4</span>
+            <span>HERMES · First launch — step {step}/4</span>
           </div>
           <ProgressDots step={step} />
         </div>
@@ -201,7 +201,7 @@ export function OnboardingWizard({ onDone }: Props) {
               color: "var(--fg-2)",
             }}
           >
-            Erreur : {erreur}
+            Error: {erreur}
           </div>
         )}
 
@@ -215,11 +215,11 @@ export function OnboardingWizard({ onDone }: Props) {
               onClick={() => setStep((s) => (s - 1) as Step)}
               disabled={submitting}
             >
-              ← Retour
+              ← Back
             </button>
           ) : (
             <span style={{ fontSize: 11.5, color: "var(--fg-4)" }}>
-              Toutes les informations restent locales sur cette machine.
+              All information stays local on this machine.
             </span>
           )}
 
@@ -233,7 +233,7 @@ export function OnboardingWizard({ onDone }: Props) {
               }
               onClick={() => setStep((s) => (s + 1) as Step)}
             >
-              Continuer →
+              Continue →
             </button>
           )}
           {step === 4 && (
@@ -242,7 +242,7 @@ export function OnboardingWizard({ onDone }: Props) {
               disabled={submitting}
               onClick={finish}
             >
-              {submitting ? "Enregistrement…" : "Terminer et ouvrir HERMES"}
+              {submitting ? "Saving…" : "Finish and open HERMES"}
             </button>
           )}
         </div>
@@ -292,15 +292,15 @@ function StepIdentite({
   return (
     <div className="profile-modal__body">
       <h3 className="modal__title" style={{ marginTop: 0 }}>
-        Qui es-tu ?
+        Who are you?
       </h3>
       <p className="modal__sub" style={{ marginBottom: 18 }}>
-        Identité utilisée dans l'interface et transmise à HERMION pour
-        personnaliser le ton et la signature des réponses générées.
+        Identity shown in the interface and passed to HERMION to personalise
+        the tone and signature of drafted responses.
       </p>
 
       <div className="settings-row">
-        <div className="settings-row__label">Prénom *</div>
+        <div className="settings-row__label">First name *</div>
         <input
           className="input"
           value={firstName}
@@ -310,15 +310,15 @@ function StepIdentite({
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Nom *</div>
-          <div className="settings-row__hint">Première lettre = avatar</div>
+          <div className="settings-row__label">Last name *</div>
+          <div className="settings-row__hint">First letter = avatar</div>
         </div>
         <input className="input" value={lastName} onChange={(e) => onLastName(e.target.value)} />
       </div>
       <div className="settings-row">
         <div>
           <div className="settings-row__label">Email</div>
-          <div className="settings-row__hint">Optionnel — pour les exports</div>
+          <div className="settings-row__hint">Optional — used in exports</div>
         </div>
         <input
           className="input"
@@ -349,40 +349,40 @@ function StepEntreprise({
   return (
     <div className="profile-modal__body">
       <h3 className="modal__title" style={{ marginTop: 0 }}>
-        Ton entreprise
+        Your company
       </h3>
       <p className="modal__sub" style={{ marginBottom: 18 }}>
-        Plus tu en dis ici, mieux KRINOS scorera les AO et plus HERMION
-        rédigera de réponses précises et pertinentes.
+        The more you share here, the better KRINOS scores tenders and the more
+        precise and relevant HERMION's drafts will be.
       </p>
 
       <div className="settings-row">
-        <div className="settings-row__label">Nom de l'entreprise *</div>
+        <div className="settings-row__label">Company name *</div>
         <input
           className="input"
           value={entreprise}
           onChange={(e) => onEntreprise(e.target.value)}
-          placeholder="ex : ACME Conseil"
+          placeholder="e.g. ACME Consulting"
           autoFocus
         />
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Activité principale *</div>
-          <div className="settings-row__hint">En quelques mots</div>
+          <div className="settings-row__label">Main business activity *</div>
+          <div className="settings-row__hint">In a few words</div>
         </div>
         <input
           className="input"
           value={activite}
           onChange={(e) => onActivite(e.target.value)}
-          placeholder="ex : ESN spécialisée Java / PostgreSQL — AMO secteur public"
+          placeholder="e.g. IT services firm specialised in Java / PostgreSQL — public-sector project management"
         />
       </div>
       <div className="settings-row" style={{ alignItems: "flex-start" }}>
         <div>
-          <div className="settings-row__label">Informations utiles pour l'IA</div>
+          <div className="settings-row__label">Useful information for the AI</div>
           <div className="settings-row__hint">
-            Références clients, certifications, taille équipe, spécialités…
+            Client references, certifications, team size, specialities…
           </div>
         </div>
         <textarea
@@ -390,7 +390,7 @@ function StepEntreprise({
           style={{ minHeight: 100 }}
           value={infosUtiles}
           onChange={(e) => onInfos(e.target.value)}
-          placeholder={"ex : 12 ETP, certifié ISO 27001, références : Naval Group (2024), CDC (2023), DGAMPA (2022). Compétences PASSI 4 portées. Tarif jour moyen 950 €."}
+          placeholder={"e.g. 12 FTE, ISO 27001 certified, references: Naval Group (2024), CDC (2023), DGAMPA (2022). PASSI-qualified auditors. Average day rate €950."}
         />
       </div>
     </div>
@@ -419,12 +419,12 @@ function StepFiltres({
   return (
     <div className="profile-modal__body">
       <h3 className="modal__title" style={{ marginTop: 0 }}>
-        Premiers critères de veille
+        Initial watch criteria
       </h3>
       <p className="modal__sub" style={{ marginBottom: 18 }}>
-        ARGOS filtrera les appels d'offre avant insertion dans MNEMOSYNE
-        selon ces mots-clés. Tu pourras les modifier à tout moment dans
-        <em> Paramètres → Critères de filtrage</em>.
+        ARGOS will filter tenders with these keywords before storing them in
+        MNEMOSYNE. You can change them at any time in
+        <em> Settings → Filter criteria</em>.
       </p>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
@@ -432,18 +432,18 @@ function StepFiltres({
           className="btn"
           disabled={!canSuggest || suggesting}
           onClick={onSuggest}
-          title="Demande à PYTHIA des mots-clés pertinents selon le profil renseigné"
+          title="Ask PYTHIA for relevant keywords based on your profile"
         >
           <Icon.refresh size={11} />
-          {suggesting ? "PYTHIA réfléchit…" : "Suggérer (IA)"}
+          {suggesting ? "PYTHIA is thinking…" : "Suggest (AI)"}
         </button>
       </div>
 
       <div className="settings-row" style={{ alignItems: "flex-start" }}>
         <div>
-          <div className="settings-row__label">Mots-clés inclus *</div>
+          <div className="settings-row__label">Include keywords *</div>
           <div className="settings-row__hint">
-            Au moins un mot doit apparaître dans titre/objet/émetteur
+            At least one must appear in the title/subject/issuer
           </div>
         </div>
         <textarea
@@ -451,15 +451,15 @@ function StepFiltres({
           style={{ minHeight: 80 }}
           value={inclus}
           onChange={(e) => onInclus(e.target.value)}
-          placeholder="ex : maintenance applicative, java, postgresql, audit cyber, AMO"
+          placeholder="e.g. maintenance applicative, java, postgresql, audit cyber, AMO"
           autoFocus
         />
       </div>
       <div className="settings-row" style={{ alignItems: "flex-start" }}>
         <div>
-          <div className="settings-row__label">Mots-clés exclus</div>
+          <div className="settings-row__label">Exclude keywords</div>
           <div className="settings-row__hint">
-            AO contenant ces termes sont écartés directement
+            Tenders containing these terms are discarded immediately
           </div>
         </div>
         <textarea
@@ -467,7 +467,7 @@ function StepFiltres({
           style={{ minHeight: 80 }}
           value={exclus}
           onChange={(e) => onExclus(e.target.value)}
-          placeholder="ex : nettoyage, restauration, espaces verts, climatisation"
+          placeholder="e.g. nettoyage, restauration, espaces verts, climatisation"
         />
       </div>
 
@@ -482,9 +482,11 @@ function StepFiltres({
           color: "var(--fg-2)",
         }}
       >
-        Pourquoi cette étape est obligatoire : sans filtre, ARGOS collecterait
-        tous les AO BOAMP (plus de 1 000 par jour). Avec quelques mots-clés
-        métier précis, tu n'auras à examiner que ceux qui te concernent.
+        Why this step is required: without a filter, ARGOS would collect every
+        BOAMP tender (more than 1,000 a day). With a few precise business
+        keywords, you only review the ones that matter to you. Keywords match
+        the tender text, so write them in the portal's language (French for
+        BOAMP).
       </div>
 
       {suggestionMsg && (
@@ -517,12 +519,12 @@ function StepWorkflow({
   return (
     <div className="profile-modal__body">
       <h3 className="modal__title" style={{ marginTop: 0 }}>
-        Cadre de rédaction HERMION
+        HERMION drafting framework
       </h3>
       <p className="modal__sub" style={{ marginBottom: 18 }}>
-        Alimente MNEMOSYNE avec ta façon de répondre : décris ton processus ou
-        colle des réponses passées, l'IA en dérive un workflow réutilisable que
-        tu peux corriger. HERMION s'en servira pour toutes ses rédactions.
+        Teach MNEMOSYNE how you respond: describe your process or paste past
+        responses, and the AI derives a reusable workflow you can correct.
+        HERMION will use it for every draft.
       </p>
 
       <WorkflowEditor value={value} onChange={onChange} />
@@ -539,9 +541,9 @@ function StepWorkflow({
           lineHeight: 1.5,
         }}
       >
-        Facultatif : tu peux terminer sans workflow — HERMION construira alors
-        un plan au cas par cas. Tu pourras le définir ou le corriger à tout
-        moment dans <em>Paramètres → Rédaction HERMION</em>.
+        Optional: you can finish without a workflow — HERMION will then build an
+        outline for each tender. You can define or correct it at any time in
+        <em>Settings → HERMION drafting</em>.
       </div>
     </div>
   );

@@ -28,7 +28,7 @@ type ChipProps = { agent: AgentKey; state: AgentState; compact?: boolean };
 export function AgentChip({ agent, state, compact = false }: ChipProps) {
   const a = AGENTS[agent];
   const stateLabel =
-    state === "active" ? "Actif" : state === "running" ? "En cours" : "Inactif";
+    state === "active" ? "Active" : state === "running" ? "Running" : "Idle";
   const stateColor =
     state === "active" ? a.color : state === "running" ? "#E0A93B" : "#5A6070";
   return (

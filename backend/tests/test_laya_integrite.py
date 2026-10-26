@@ -66,7 +66,7 @@ def test_fichier_altere_de_meme_taille_refuse_au_chargement(modele_installe):
     assert len(modele_installe.requetes) == n_requetes
     with Session(get_engine()) as session:
         logs = session.exec(select(LogAgent).where(LogAgent.agent == "KRINOS")).all()
-    assert len(logs) == 1 and "réinstaller" in logs[0].message and CIBLE in logs[0].message
+    assert len(logs) == 1 and "reinstall" in logs[0].message and CIBLE in logs[0].message
     with pytest.raises(laya_moteur.ErreurLaya):
         _juger()  # toujours refusé (modèle à réinstaller), sans second log
     with Session(get_engine()) as session:

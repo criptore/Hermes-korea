@@ -51,7 +51,7 @@ def extraire_document(document: Document) -> ExtractionDocument:
     """Extrait le texte du fichier local et calcule ses métadonnées fichier."""
     chemin = _chemin_document(document.chemin_local)
     if not chemin.exists() or not chemin.is_file():
-        raise ErreurExtractionDocument(f"Document introuvable : {document.chemin_local}")
+        raise ErreurExtractionDocument(f"Document not found: {document.chemin_local}")
 
     taille = chemin.stat().st_size
     if taille > settings.krinos_extraction_max_octets:
@@ -64,8 +64,8 @@ def extraire_document(document: Document) -> ExtractionDocument:
     # modification externe, le fichier n'est pas lu et la référence reste intacte.
     if checksum != document.checksum_sha256:
         raise ErreurIntegriteDocument(
-            f"Intégrité compromise : le fichier {document.nom_fichier} a été modifié "
-            "depuis son téléchargement (SHA-256 différent)"
+            f"Integrity compromised: file {document.nom_fichier} has been modified "
+            "since it was downloaded (different SHA-256)"
         )
     avertissements: list[str] = []
     texte = _extraire_texte(chemin, document.type, avertissements)
@@ -73,7 +73,7 @@ def extraire_document(document: Document) -> ExtractionDocument:
     plafond = settings.krinos_extraction_max_caracteres
     if len(texte) > plafond:
         texte = texte[:plafond]
-        avertissements.append(f"Texte tronqué à {plafond} caractères")
+        avertissements.append(f"Text truncated to {plafond} characters")
     return ExtractionDocument(
         texte=texte,
         checksum_sha256=checksum,
@@ -243,8 +243,8 @@ def _signaler_ecart(
     """Applique le résultat d'un contrôle : alerte si altéré, rétablit si redevenu conforme."""
     if etat is False:
         message = (
-            f"Intégrité compromise : le fichier {document.nom_fichier} a été modifié "
-            "depuis son téléchargement (SHA-256 différent)"
+            f"Integrity compromised: file {document.nom_fichier} has been modified "
+            "since it was downloaded (different SHA-256)"
         )
         signaler_alteration(session, document, message)
         erreurs.append(f"Document {document.id}: {message}")
@@ -256,8 +256,9 @@ def _signaler_ecart(
                 agent="KRINOS",
                 niveau=NiveauLog.INFO,
                 message=(
-                    f"Intégrité rétablie : {document.nom_fichier} (AO {document.appel_offre_id}) "
-                    "correspond de nouveau à son SHA-256"
+                    f"Integrity restored: {document.nom_fichier} "
+                    f"(tender {document.appel_offre_id}) "
+                    "matches its SHA-256 again"
                 ),
                 appel_offre_id=document.appel_offre_id,
             )
@@ -274,8 +275,8 @@ def signaler_alteration(session: Session, document: Document, detail: str) -> No
             agent="KRINOS",
             niveau=NiveauLog.ERROR,
             message=(
-                f"ALERTE intégrité document {document.id} « {document.nom_fichier} » "
-                f"(AO {document.appel_offre_id}) : {detail}. Extraction et analyse ignorées."
+                f"INTEGRITY ALERT document {document.id} \"{document.nom_fichier}\" "
+                f"(tender {document.appel_offre_id}): {detail}. Extraction and analysis skipped."
             ),
             appel_offre_id=document.appel_offre_id,
         )
@@ -347,7 +348,7 @@ def _moteur_ocr() -> Any:
 
                 _OCR_MOTEUR = RapidOCR(params={"Global.log_level": "warning"})
             except Exception as exc:  # noqa: BLE001
-                logger.warning("KRINOS : OCR indisponible — {}", exc)
+                logger.warning("KRINOS: OCR unavailable — {}", exc)
         return _OCR_MOTEUR
 
 
@@ -386,7 +387,7 @@ def _texte_page_pymupdf(page: Any) -> str:
             t for t in page.find_tables().tables if t.row_count >= 2 and t.col_count >= 2
         ]
     except Exception as exc:  # noqa: BLE001
-        logger.debug("KRINOS : détection de tableaux impossible — {}", exc)
+        logger.debug("KRINOS: table detection failed — {}", exc)
         tables = []
     zones = [fitz.Rect(t.bbox) for t in tables]
     elements: list[tuple[float, str]] = []
@@ -406,11 +407,11 @@ def _extraire_pdf(chemin: Path, avertissements: list[str]) -> str:
     try:
         import fitz  # PyMuPDF
     except ImportError as exc:
-        return _extraire_pdf_pdfplumber(chemin, f"PyMuPDF indisponible : {exc}")
+        return _extraire_pdf_pdfplumber(chemin, f"PyMuPDF unavailable: {exc}")
     try:
         with fitz.open(chemin) as doc:
             if doc.needs_pass:
-                raise ErreurExtractionDocument("PDF protégé par mot de passe")
+                raise ErreurExtractionDocument("Password-protected PDF")
             return _extraire_pdf_pymupdf(doc, avertissements)
     except ErreurExtractionDocument:
         raise
@@ -444,7 +445,7 @@ def _extraire_pdf_pymupdf(doc: Any, avertissements: list[str]) -> str:
                         texte = (texte + "\n" + _ocr_page(moteur, page)).strip()
                         ocr_faites += 1
                     except Exception as exc:  # noqa: BLE001
-                        logger.warning("KRINOS : OCR page {} en échec — {}", index + 1, exc)
+                        logger.warning("KRINOS: OCR failed on page {} — {}", index + 1, exc)
                         sans_ocr.append(index + 1)
         pages.append(texte)
 
@@ -452,13 +453,13 @@ def _extraire_pdf_pymupdf(doc: Any, avertissements: list[str]) -> str:
     mentions: list[str] = []
     if sans_ocr:
         mentions.append(
-            "Document scanné non lu : OCR indisponible ou en échec "
+            "Scanned document not read: OCR unavailable or failed "
             f"(pages {_liste_pages(sans_ocr)})"
         )
     if hors_plafond_ocr:
         mentions.append(
-            f"Pages scannées non lues : plafond OCR de {settings.krinos_ocr_max_pages} "
-            f"pages atteint (pages {_liste_pages(hors_plafond_ocr)})"
+            f"Scanned pages not read: OCR cap of {settings.krinos_ocr_max_pages} "
+            f"pages reached (pages {_liste_pages(hors_plafond_ocr)})"
         )
     if limite < total:
         mentions.append(
@@ -479,7 +480,7 @@ def _extraire_pdf_pdfplumber(chemin: Path, motif: str) -> str:
             return "\n".join(page.extract_text() or "" for page in pages)
     except ImportError as exc:
         raise ErreurExtractionDocument(
-            f"Aucun extracteur PDF disponible : {motif} ; pdfplumber indisponible : {exc}"
+            f"No PDF extractor available: {motif}; pdfplumber unavailable: {exc}"
         ) from exc
     except Exception as exc:  # noqa: BLE001
         raise ErreurExtractionDocument(
@@ -515,8 +516,8 @@ def _ouvrir_ooxml(chemin: Path, libelle: str) -> zipfile.ZipFile:
     if total > plafond:
         archive.close()
         raise ErreurExtractionDocument(
-            f"{libelle} refusé : {total // (1024 * 1024)} Mo décompressés déclarés, "
-            f"plafond {plafond // (1024 * 1024)} Mo (archive piégée ?)"
+            f"{libelle} refused: {total // (1024 * 1024)} MB declared uncompressed, "
+            f"cap {plafond // (1024 * 1024)} MB (zip bomb?)"
         )
     return archive
 
@@ -538,7 +539,7 @@ def _extraire_xlsx(chemin: Path, avertissements: list[str]) -> str:
                             break
                 if taille > plafond:
                     avertissements.append(
-                        f"XLSX lu partiellement : plafond de {plafond} caractères atteint"
+                        f"XLSX partially read: {plafond}-character cap reached"
                     )
                     break
     except ErreurExtractionDocument:
@@ -652,7 +653,7 @@ def _extraire_docx(chemin: Path) -> str:
         raise ErreurExtractionDocument(f"DOCX illisible : {exc}") from exc
     corps = next((e for e in racine if _local(e.tag) == "body"), None)
     if corps is None:
-        raise ErreurExtractionDocument("DOCX illisible : corps du document absent")
+        raise ErreurExtractionDocument("Unreadable DOCX: document body missing")
     return "\n".join(_blocs_docx(corps))
 
 

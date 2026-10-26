@@ -1,19 +1,24 @@
 # src-tauri/
 
-Wrapper Tauri (Rust) qui embarque le frontend Vite dans une fenêtre native.
+Tauri (Rust) wrapper that embeds the Vite frontend in a native window and, in
+release builds, owns the lifecycle of the backend and PYTHIA (see `src/lib.rs`).
 
-**Pré-requis** : Rust stable installé (https://rustup.rs/) et Visual Studio Build Tools 2022 (Windows).
+**Prerequisites**: stable Rust (https://rustup.rs/), plus Visual Studio Build
+Tools 2022 on Windows or the Xcode Command Line Tools on macOS.
 
-Une fois Rust en place :
-
-```powershell
+```bash
 cd frontend
-npm install @tauri-apps/cli @tauri-apps/api
-npm run tauri dev      # mode dev (Vite + fenêtre Tauri)
-npm run tauri build    # bundle desktop (installer Windows / .app macOS / .deb Linux)
+npm run tauri dev      # dev mode (Vite + Tauri window; start backend/PYTHIA yourself)
+npm run tauri build    # desktop bundle (Windows .exe / macOS .app + .dmg / Linux .deb)
 ```
 
-Icônes attendues sous `src-tauri/icons/` :
-- `32x32.png`, `128x128.png`, `icon.ico` (Windows), `icon.icns` (macOS).
+Full packages, with the bundled PyInstaller backend:
+`scripts/build-installer.ps1` (Windows) and `scripts/build-macos.sh` (macOS,
+see `docs/macos.md`).
 
-Ces icônes peuvent être générées plus tard avec `cargo tauri icon mon-logo.png`.
+- `tauri.conf.json` — shared configuration; `tauri.macos.conf.json` is merged
+  automatically on macOS (`.icns` icon, minimum macOS 11).
+- `macos/HERMES.entitlements` — Hardened Runtime entitlements, used only when
+  signing with a Developer ID (`APPLE_SIGNING_IDENTITY`).
+- `icons/` — `icon.ico` (Windows), `icon.icns` + PNGs (macOS/Linux), generated
+  from the same 256 px artwork (`icon.png`).

@@ -5,7 +5,7 @@ import { VARIANTES_ENTREE_JOURNAL } from "../lib/motion";
 import { api, type LogAgentEntry, type NiveauLog } from "../lib/api";
 
 const AGENTS: { id: string | "all"; label: string }[] = [
-  { id: "all", label: "Tous" },
+  { id: "all", label: "All" },
   { id: "ARGOS", label: "ARGOS" },
   { id: "KRINOS", label: "KRINOS" },
   { id: "HERMION", label: "HERMION" },
@@ -13,10 +13,10 @@ const AGENTS: { id: string | "all"; label: string }[] = [
 ];
 
 const NIVEAUX: { id: NiveauLog | "all"; label: string }[] = [
-  { id: "all", label: "Tous niveaux" },
+  { id: "all", label: "All levels" },
   { id: "info", label: "Info" },
-  { id: "warning", label: "Avertissements" },
-  { id: "error", label: "Erreurs" },
+  { id: "warning", label: "Warnings" },
+  { id: "error", label: "Errors" },
 ];
 
 const COULEUR_NIVEAU: Record<NiveauLog, string> = {
@@ -30,7 +30,7 @@ const PAGE = 100;
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("fr-FR", {
+    return new Date(iso).toLocaleString("en-GB", {
       day: "2-digit",
       month: "2-digit",
       hour: "2-digit",
@@ -113,14 +113,14 @@ export function Journal({ refreshKey = 0 }: { refreshKey?: number }) {
         ))}
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 11.5, color: "var(--fg-3)", marginRight: 8 }}>
-          {total} entrée{total > 1 ? "s" : ""}
+          {total} entr{total > 1 ? "ies" : "y"}
         </span>
         <button
           className="btn btn--ghost btn--sm"
           onClick={() => void load(0, false)}
           disabled={loading}
         >
-          <Icon.refresh size={11} /> {loading ? "Chargement…" : "Rafraîchir"}
+          <Icon.refresh size={11} /> {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
 
@@ -136,7 +136,7 @@ export function Journal({ refreshKey = 0 }: { refreshKey?: number }) {
             color: "var(--fg-2)",
           }}
         >
-          Erreur : {error}
+          Error: {error}
         </div>
       )}
 
@@ -151,7 +151,7 @@ export function Journal({ refreshKey = 0 }: { refreshKey?: number }) {
       >
         {items.length === 0 && !loading ? (
           <div style={{ padding: 30, textAlign: "center", color: "var(--fg-3)", fontSize: 12.5 }}>
-            Aucune entrée de journal pour ce filtre.
+            No log entries for this filter.
           </div>
         ) : (
           // initial={false} : le premier chargement s'affiche d'un bloc ; ensuite les
@@ -212,7 +212,7 @@ export function Journal({ refreshKey = 0 }: { refreshKey?: number }) {
                 {log.message}
                 {log.appel_offre_id != null && (
                   <span style={{ color: "var(--fg-4)", marginLeft: 6 }}>
-                    · AO {log.appel_offre_id}
+                    · Tender {log.appel_offre_id}
                   </span>
                 )}
               </span>
@@ -229,7 +229,7 @@ export function Journal({ refreshKey = 0 }: { refreshKey?: number }) {
             disabled={loading}
             onClick={() => void load(items.length, true)}
           >
-            Charger plus ({items.length} / {total})
+            Load more ({items.length} / {total})
           </button>
         </div>
       )}

@@ -137,19 +137,19 @@ async def _post_json(url: str, payload: dict[str, Any], timeout: float, libelle:
             return r.json()
     except httpx.TimeoutException as exc:
         raise ErreurPythia(
-            f"Timeout {libelle} après {timeout:.0f}s ({type(exc).__name__})"
+            f"{libelle} timed out after {timeout:.0f}s ({type(exc).__name__})"
         ) from exc
     except httpx.HTTPStatusError as exc:
         # Le corps de l'erreur (ex. « modèle introuvable ») est le détail utile.
         corps = exc.response.text.strip()[:300]
         raise ErreurPythia(
-            f"Appel {libelle} impossible : {exc}{' — ' + corps if corps else ''}"
+            f"{libelle} call failed: {exc}{' — ' + corps if corps else ''}"
         ) from exc
     except httpx.HTTPError as exc:
         detail = str(exc).strip() or type(exc).__name__
-        raise ErreurPythia(f"Appel {libelle} impossible : {detail}") from exc
+        raise ErreurPythia(f"{libelle} call failed: {detail}") from exc
     except ValueError as exc:
-        raise ErreurPythia(f"Réponse {libelle} non-JSON : {exc}") from exc
+        raise ErreurPythia(f"{libelle} response is not JSON: {exc}") from exc
 
 
 class MoteurOllama:
@@ -203,7 +203,7 @@ class MoteurOllama:
         )
         texte = data.get("response") if isinstance(data, dict) else None
         if not isinstance(texte, str):
-            raise ErreurPythia("Réponse PYTHIA invalide : champ 'response' manquant")
+            raise ErreurPythia("Invalid PYTHIA response: 'response' field missing")
         eval_ns = int(data.get("eval_duration") or 0)
         return ReponsePythia(
             texte=retirer_raisonnement(texte),
@@ -223,7 +223,7 @@ class MoteurOllama:
         )
         vecteur = data.get("embedding") if isinstance(data, dict) else None
         if not isinstance(vecteur, list) or not vecteur:
-            raise ErreurPythia("Réponse embeddings PYTHIA invalide")
+            raise ErreurPythia("Invalid PYTHIA embeddings response")
         return [float(x) for x in vecteur]
 
     async def est_disponible(self, timeout: float) -> bool:
@@ -241,7 +241,7 @@ class MoteurOllama:
                 r.raise_for_status()
                 data = r.json()
         except httpx.HTTPError as exc:
-            raise ErreurPythia(f"Ollama indisponible : {exc}") from exc
+            raise ErreurPythia(f"Ollama unavailable: {exc}") from exc
 
         modeles = data.get("models", [])
         if not isinstance(modeles, list):
@@ -300,7 +300,7 @@ class MoteurOpenAICompatible:
         except (KeyError, IndexError, TypeError):
             texte = None
         if not isinstance(texte, str):
-            raise ErreurPythia("Réponse PYTHIA invalide : 'choices[0].message.content' manquant")
+            raise ErreurPythia("Invalid PYTHIA response: 'choices[0].message.content' missing")
         usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
         return ReponsePythia(
             texte=retirer_raisonnement(texte),
@@ -323,7 +323,7 @@ class MoteurOpenAICompatible:
         except (KeyError, IndexError, TypeError):
             vecteur = None
         if not isinstance(vecteur, list) or not vecteur:
-            raise ErreurPythia("Réponse embeddings PYTHIA invalide")
+            raise ErreurPythia("Invalid PYTHIA embeddings response")
         return [float(x) for x in vecteur]
 
     async def est_disponible(self, timeout: float) -> bool:
@@ -341,7 +341,7 @@ class MoteurOpenAICompatible:
                 r.raise_for_status()
                 data = r.json()
         except httpx.HTTPError as exc:
-            raise ErreurPythia(f"Serveur openai_compatible indisponible : {exc}") from exc
+            raise ErreurPythia(f"openai_compatible server unavailable: {exc}") from exc
         modeles = data.get("data", []) if isinstance(data, dict) else []
         return [str(m.get("id") or "") for m in modeles if isinstance(m, dict)]
 
@@ -474,7 +474,7 @@ async def telecharger_modele(
     ollama : les serveurs openai_compatible chargent leurs modèles eux-mêmes.
     """
     if (settings.pythia_moteur or "ollama").strip().lower() != "ollama":
-        raise ErreurPythia("Le téléchargement de modèle n'existe que pour le moteur ollama.")
+        raise ErreurPythia("Model download only exists for the ollama engine.")
     cible = nom or settings.pythia_modele
     url = f"{settings.ollama_base_url.rstrip('/')}/api/pull"
     payload = {"model": cible, "stream": True}
@@ -494,7 +494,7 @@ async def telecharger_modele(
                         raise ErreurPythia(str(evenement["error"]))
                     yield evenement
     except httpx.HTTPError as exc:
-        raise ErreurPythia(f"Téléchargement modèle {cible} : {exc}") from exc
+        raise ErreurPythia(f"Model download {cible}: {exc}") from exc
 
 
 def verifier_url_ollama_locale(url: str) -> str:
@@ -506,7 +506,7 @@ def verifier_url_ollama_locale(url: str) -> str:
         "::1",
     }:
         raise ErreurPythia(
-            "HERMES impose un moteur PYTHIA local (127.0.0.1, localhost ou ::1)."
+            "HERMES requires a local PYTHIA engine (127.0.0.1, localhost or ::1)."
         )
     return url
 

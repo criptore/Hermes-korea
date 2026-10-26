@@ -31,11 +31,11 @@ _CPV = re.compile(r"^\d{8}(-\d)?$")
 def _verifier_non_sensible(valeur: str) -> str:
     v = valeur.strip()
     if _EMAIL.search(v):
-        raise ValueError("adresse email interdite dans le profil métier")
+        raise ValueError("email addresses are not allowed in the business profile")
     for m in _SIRET.finditer(v):
         chiffres = re.sub(r"\D", "", m.group())
         if len(chiffres) in (9, 14):
-            raise ValueError("numéro SIREN/SIRET interdit dans le profil métier")
+            raise ValueError("SIREN/SIRET numbers are not allowed in the business profile")
     return v
 
 
@@ -46,7 +46,7 @@ def _liste_propre(valeurs: list[str]) -> list[str]:
         if v and v not in vus:
             vus.append(v)
     if len(vus) > MAX_ELEMENTS:
-        raise ValueError(f"maximum {MAX_ELEMENTS} éléments")
+        raise ValueError(f"maximum {MAX_ELEMENTS} items")
     return vus
 
 
@@ -76,7 +76,7 @@ class ProfilMetier(BaseModel):
     @classmethod
     def _liste(cls, v: list[str]) -> list[str]:
         if any(len(x) > MAX_LONGUEUR_ELEMENT for x in v):
-            raise ValueError(f"élément trop long (max {MAX_LONGUEUR_ELEMENT} caractères)")
+            raise ValueError(f"item too long (max {MAX_LONGUEUR_ELEMENT} characters)")
         return _liste_propre(v)
 
     @field_validator("codes_cpv")
@@ -106,7 +106,7 @@ def enregistrer_profil(session: Session, profil: ProfilMetier) -> ProfilMetier:
     entree = session.get(Parametre, CLE_PARAMETRE) or Parametre(
         cle=CLE_PARAMETRE,
         valeur="",
-        description="Profil métier structuré (KRINOS, Laya, PYTHIA)",
+        description="Structured business profile (KRINOS, Laya, PYTHIA)",
     )
     entree.valeur = profil.model_dump_json()
     entree.maj_le = datetime.now(UTC)
@@ -120,28 +120,28 @@ def composer_texte(profil: ProfilMetier, mots_cles: list[str] | tuple[str, ...] 
     mots-clés ARGOS. Les sections les plus importantes viennent en premier."""
     lignes: list[str] = []
     if profil.activite:
-        lignes.append(f"Activité : {profil.activite}")
+        lignes.append(f"Business activity: {profil.activite}")
     if profil.secteurs:
-        lignes.append("Secteurs : " + ", ".join(profil.secteurs))
+        lignes.append("Sectors: " + ", ".join(profil.secteurs))
     if profil.codes_cpv:
-        lignes.append("Codes CPV : " + ", ".join(profil.codes_cpv))
+        lignes.append("CPV codes: " + ", ".join(profil.codes_cpv))
     if profil.types_marches:
-        lignes.append("Types de marchés visés : " + ", ".join(profil.types_marches))
+        lignes.append("Target contract types: " + ", ".join(profil.types_marches))
     if profil.zone_geographique:
-        lignes.append(f"Zone géographique : {profil.zone_geographique}")
+        lignes.append(f"Geographic area: {profil.zone_geographique}")
     taille = []
     if profil.effectif is not None:
-        taille.append(f"{profil.effectif} personnes")
+        taille.append(f"{profil.effectif} people")
     if profil.ca_tranche:
-        taille.append(f"CA {profil.ca_tranche}")
+        taille.append(f"revenue {profil.ca_tranche}")
     if taille:
-        lignes.append("Taille : " + ", ".join(taille))
+        lignes.append("Size: " + ", ".join(taille))
     if profil.certifications:
-        lignes.append("Certifications : " + ", ".join(profil.certifications))
+        lignes.append("Certifications: " + ", ".join(profil.certifications))
     if profil.references_types:
-        lignes.append("Références types : " + " ; ".join(profil.references_types))
+        lignes.append("Typical references: " + " ; ".join(profil.references_types))
     if mots_cles:
-        lignes.append("Mots-clés de veille : " + ", ".join(mots_cles))
+        lignes.append("Watch keywords: " + ", ".join(mots_cles))
     texte = "\n".join(lignes)
     if len(texte) > LONGUEUR_MAX_TEXTE:
         texte = texte[: LONGUEUR_MAX_TEXTE - 1].rstrip() + "…"

@@ -9,8 +9,8 @@ export function Deadline({ date }: Props) {
     <div className={`deadline${urgent ? " deadline--urgent" : ""}`}>
       <Icon.clock size={12} />
       <span>{formatted}</span>
-      {urgent && <span className="deadline__days">J−{days}</span>}
-      {echu && <span className="deadline__echu">Échu</span>}
+      {urgent && <span className="deadline__days">D−{days}</span>}
+      {echu && <span className="deadline__echu">Expired</span>}
     </div>
   );
 }

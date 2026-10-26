@@ -191,7 +191,7 @@ def expirer_ao_depasses(
         _journaliser(
             session,
             niveau=NiveauLog.INFO,
-            message=f"Expiration automatique : {expires} AO périmés passés en EXPIRE",
+            message=f"Automatic expiry: {expires} out-of-date tenders set to EXPIRE",
         )
     return expires
 
@@ -246,10 +246,10 @@ async def _traiter_pipeline_verrouille(
             session,
             niveau=NiveauLog.INFO,
             message=(
-                f"Pipeline autonome : {rapport.ao_analyses} analysés, "
-                f"{rapport.ao_rediges} mis en rédaction, "
-                f"{rapport.ao_sous_seuil} sous le seuil, "
-                f"{rapport.ao_echecs} échecs"
+                f"Autonomous pipeline: {rapport.ao_analyses} analysed, "
+                f"{rapport.ao_rediges} sent to drafting, "
+                f"{rapport.ao_sous_seuil} below threshold, "
+                f"{rapport.ao_echecs} failures"
             ),
         )
     return rapport
@@ -298,16 +298,16 @@ async def _phase_analyse(
             _journaliser(
                 session,
                 niveau=NiveauLog.WARNING,
-                message=f"Pipeline : analyse AO {ao_id} échouée — {exc}",
+                message=f"Pipeline: analysis of tender {ao_id} failed — {exc}",
                 appel_offre_id=ao_id,
             )
         except Exception as exc:  # noqa: BLE001
             rapport.ao_echecs += 1
-            logger.exception("Pipeline : erreur inattendue analyse AO {}", ao_id)
+            logger.exception("Pipeline: unexpected error analysing tender {}", ao_id)
             _journaliser(
                 session,
                 niveau=NiveauLog.ERROR,
-                message=f"Pipeline : erreur inattendue AO {ao_id} — {exc}",
+                message=f"Pipeline: unexpected error on tender {ao_id} — {exc}",
                 appel_offre_id=ao_id,
             )
 
@@ -342,12 +342,14 @@ async def _pretri_laya(session: Session, ao: AppelOffre) -> bool:
         _journaliser(
             session,
             niveau=NiveauLog.INFO,
-            message=f"Pré-tri Laya ignoré pour AO {ao_id} (analyse normale) : {exc}",
+            message=f"Laya pre-screening skipped for tender {ao_id} (normal analysis): {exc}",
             appel_offre_id=ao_id,
         )
         return False
     except Exception as exc:  # noqa: BLE001 — le pré-tri ne doit jamais bloquer le pipeline
-        logger.warning("Pré-tri Laya : erreur inattendue AO {} — {}", ao_id, type(exc).__name__)
+        logger.warning(
+            "Laya pre-screening: unexpected error on tender {} — {}", ao_id, type(exc).__name__
+        )
         return False
     seuil = laya.pretri_seuil(session)
     ao.pertinence_laya = pertinence
@@ -362,8 +364,8 @@ async def _pretri_laya(session: Session, ao: AppelOffre) -> bool:
         session,
         niveau=NiveauLog.INFO,
         message=(
-            f"AO {ao_id} hors profil (Laya) : pertinence {pertinence:.2f} < seuil "
-            f"{seuil:.2f} — non analysé par PYTHIA, analyse forçable"
+            f"Tender {ao_id} off-profile (Laya): relevance {pertinence:.2f} < threshold "
+            f"{seuil:.2f} — not analysed by PYTHIA, analysis can be forced"
         ),
         appel_offre_id=ao_id,
     )
@@ -438,17 +440,17 @@ async def _phase_redaction(
             _journaliser(
                 session,
                 niveau=NiveauLog.WARNING,
-                message=f"Pipeline : rédaction AO {ao_id} échouée — {exc}",
+                message=f"Pipeline: drafting of tender {ao_id} failed — {exc}",
                 appel_offre_id=ao_id,
             )
         except Exception as exc:  # noqa: BLE001
             _restaurer_analyse_si_aucune_reponse(session, ao)
             rapport.ao_echecs += 1
-            logger.exception("Pipeline : erreur inattendue rédaction AO {}", ao_id)
+            logger.exception("Pipeline: unexpected error drafting tender {}", ao_id)
             _journaliser(
                 session,
                 niveau=NiveauLog.ERROR,
-                message=f"Pipeline : erreur inattendue rédaction AO {ao_id} — {exc}",
+                message=f"Pipeline: unexpected error drafting tender {ao_id} — {exc}",
                 appel_offre_id=ao_id,
             )
 
@@ -462,14 +464,14 @@ async def _documents_best_effort(session: Session, ao: AppelOffre) -> None:
     try:
         await telecharger_documents_ao(session, ao)
     except Exception as exc:  # noqa: BLE001
-        logger.debug("Pipeline : téléchargement docs AO {} ignoré — {}", ao.id, exc)
+        logger.debug("Pipeline: document download for tender {} skipped — {}", ao.id, exc)
 
     # Hors boucle async : l'OCR/PDF d'un gros DCE bloquerait tout FastAPI.
     rapport = await extraire_documents_appel_offre_async(session, ao, best_effort=True)
     for erreur in rapport.erreurs:
-        logger.debug("Pipeline : extraction AO {} ignorée — {}", ao.id, erreur)
+        logger.debug("Pipeline: extraction for tender {} skipped — {}", ao.id, erreur)
     for avertissement in rapport.avertissements:
-        logger.warning("Pipeline : extraction AO {} incomplète — {}", ao.id, avertissement)
+        logger.warning("Pipeline: extraction for tender {} incomplete — {}", ao.id, avertissement)
 
 
 # --------------------------------------------------------------------------- #

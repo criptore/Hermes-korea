@@ -118,7 +118,7 @@ def test_analyser_ao_persiste_resultat_et_passe_en_analyse(monkeypatch):
         assert ao is not None
         assert ao.statut == StatutAO.ANALYSE
         logs = session.exec(select(LogAgent).where(LogAgent.agent == "KRINOS")).all()
-        assert any("Analyse KRINOS terminée" in log.message for log in logs)
+        assert any("KRINOS analysis complete" in log.message for log in logs)
 
 
 def test_analyser_ao_accepte_alias_json_francais(monkeypatch):
@@ -468,9 +468,9 @@ def test_analyser_ao_fallback_local_si_sortie_sans_resume(monkeypatch):
         ao = session.get(AppelOffre, ao_id)
         resultat = asyncio.run(analyzer.analyser_ao(session, ao))
         assert resultat.analyse.modele_llm == f"{settings.pythia_modele}+fallback-local"
-        assert "Analyse locale de secours" in resultat.analyse.justification_score
+        assert "Local fallback analysis" in resultat.analyse.justification_score
         logs = session.exec(select(LogAgent).where(LogAgent.agent == "KRINOS")).all()
-        assert any("Fallback KRINOS local" in log.message for log in logs)
+        assert any("Local KRINOS fallback" in log.message for log in logs)
 
 
 def test_analyser_ao_fallback_local_sans_document(monkeypatch):
@@ -491,4 +491,4 @@ def test_analyser_ao_fallback_local_sans_document(monkeypatch):
     with Session(get_engine()) as session:
         ao = session.get(AppelOffre, ao_id)
         resultat = asyncio.run(analyzer.analyser_ao(session, ao))
-        assert "Aucun contenu documentaire exploitable" in resultat.analyse.resume
+        assert "No usable document content" in resultat.analyse.resume

@@ -61,7 +61,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
 
   const derive = async () => {
     if (contenu.trim().length === 0) {
-      setError("Décris ton processus ou colle une réponse passée d'abord.");
+      setError("Describe your process or paste a past response first.");
       return;
     }
     setDeriving(true);
@@ -74,7 +74,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
         sections: wf.sections,
       });
       setInfo(
-        `${wf.sections.length} sections proposées par PYTHIA — vérifie et corrige avant d'enregistrer.`,
+        `${wf.sections.length} sections suggested by PYTHIA — review and correct them before saving.`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -87,9 +87,9 @@ export function WorkflowEditor({ value, onChange }: Props) {
     <div>
       <div className="settings-row" style={{ alignItems: "flex-start" }}>
         <div>
-          <div className="settings-row__label">Point de départ</div>
+          <div className="settings-row__label">Starting point</div>
           <div className="settings-row__hint">
-            PYTHIA en dérive une trame réutilisable
+            PYTHIA derives a reusable outline from it
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
@@ -99,14 +99,14 @@ export function WorkflowEditor({ value, onChange }: Props) {
               onClick={() => setMode("exemples")}
               type="button"
             >
-              Réponses passées
+              Past responses
             </button>
             <button
               className={`btn btn--sm${mode === "workflow" ? " btn--gold" : ""}`}
               onClick={() => setMode("workflow")}
               type="button"
             >
-              Décrire mon process
+              Describe my process
             </button>
           </div>
           <textarea
@@ -116,8 +116,8 @@ export function WorkflowEditor({ value, onChange }: Props) {
             onChange={(e) => setContenu(e.target.value)}
             placeholder={
               mode === "exemples"
-                ? "Colle ici une ou plusieurs réponses à AO déjà rédigées (texte intégral)."
-                : "Décris comment tu structures tes réponses : sections, ordre, ton, mentions obligatoires…"
+                ? "Paste one or more tender responses you have already written (full text)."
+                : "Describe how you structure your responses: sections, order, tone, mandatory statements…"
             }
           />
           <div>
@@ -126,10 +126,10 @@ export function WorkflowEditor({ value, onChange }: Props) {
               onClick={() => void derive()}
               disabled={deriving}
               type="button"
-              title="Demande à PYTHIA de dériver un workflow"
+              title="Ask PYTHIA to derive a workflow"
             >
               <Icon.refresh size={11} />
-              {deriving ? "PYTHIA réfléchit…" : "Générer le workflow (IA)"}
+              {deriving ? "PYTHIA is thinking…" : "Generate workflow (AI)"}
             </button>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
             color: "var(--fg-2)",
           }}
         >
-          Erreur : {error}
+          Error: {error}
         </div>
       )}
 
@@ -175,17 +175,17 @@ export function WorkflowEditor({ value, onChange }: Props) {
         }}
       >
         <div className="settings-row__label">
-          Sections du workflow ({sections.length})
+          Workflow sections ({sections.length})
         </div>
         <button className="btn btn--sm" onClick={addSection} type="button">
-          <Icon.plus size={12} /> Ajouter
+          <Icon.plus size={12} /> Add
         </button>
       </div>
 
       {sections.length === 0 && (
         <div style={{ color: "var(--fg-3)", fontSize: 13, padding: "12px 0" }}>
-          Aucune section. Génère-les via l'IA ou ajoute-les à la main — sinon
-          HERMION construira un plan dynamique au cas par cas.
+          No sections. Generate them with AI or add them by hand — otherwise
+          HERMION will build a dynamic outline for each tender.
         </div>
       )}
 
@@ -215,14 +215,14 @@ export function WorkflowEditor({ value, onChange }: Props) {
                 style={{ flex: 1 }}
                 value={s.titre}
                 onChange={(e) => patchSection(i, { titre: e.target.value })}
-                placeholder="Titre de la section"
+                placeholder="Section title"
               />
               <button
                 className="btn btn--sm"
                 onClick={() => moveSection(i, -1)}
                 disabled={i === 0}
                 type="button"
-                title="Monter"
+                title="Move up"
                 style={{ padding: "4px 7px" }}
               >
                 <span style={{ display: "inline-block", transform: "rotate(-90deg)" }}>
@@ -234,7 +234,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
                 onClick={() => moveSection(i, 1)}
                 disabled={i === sections.length - 1}
                 type="button"
-                title="Descendre"
+                title="Move down"
                 style={{ padding: "4px 7px" }}
               >
                 <span style={{ display: "inline-block", transform: "rotate(90deg)" }}>
@@ -245,7 +245,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
                 className="btn btn--sm"
                 onClick={() => removeSection(i)}
                 type="button"
-                title="Supprimer la section"
+                title="Delete section"
                 style={{ padding: "4px 7px" }}
               >
                 <Icon.close size={11} />
@@ -256,7 +256,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
               style={{ minHeight: 56, marginTop: 8 }}
               value={s.brief}
               onChange={(e) => patchSection(i, { brief: e.target.value })}
-              placeholder="Ce que doit contenir la section (1-3 phrases)"
+              placeholder="What the section must contain (1-3 sentences)"
             />
             <div
               style={{
@@ -268,7 +268,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
                 color: "var(--fg-3)",
               }}
             >
-              <span>Longueur cible (mots, optionnel)</span>
+              <span>Target length (words, optional)</span>
               <input
                 className="input"
                 style={{ width: 90 }}
@@ -290,9 +290,9 @@ export function WorkflowEditor({ value, onChange }: Props) {
 
       <div className="settings-row" style={{ alignItems: "flex-start", marginTop: 18 }}>
         <div>
-          <div className="settings-row__label">Consignes globales</div>
+          <div className="settings-row__label">Global instructions</div>
           <div className="settings-row__hint">
-            Ton, style, mentions communes à toutes les sections
+            Tone, style, statements shared by all sections
           </div>
         </div>
         <textarea
@@ -302,7 +302,7 @@ export function WorkflowEditor({ value, onChange }: Props) {
           onChange={(e) =>
             onChange({ ...value, consignes_globales: e.target.value })
           }
-          placeholder="ex : vouvoiement, ton factuel, citer systématiquement nos certifications, pas de superlatifs."
+          placeholder="e.g. formal register, factual tone, always cite our certifications, no superlatives."
         />
       </div>
     </div>

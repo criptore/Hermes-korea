@@ -86,7 +86,7 @@ FICHIERS_PAR_PRECISION: dict[str, tuple[FichierModele, ...]] = {
 
 def fichiers_requis(precision: str) -> tuple[FichierModele, ...]:
     if precision not in FICHIERS_PAR_PRECISION:
-        raise ErreurLaya(f"précision Laya inconnue : {precision!r} (fp16 ou fp32)")
+        raise ErreurLaya(f"unknown Laya precision: {precision!r} (fp16 or fp32)")
     return (TOKENIZER, CONFIG, *FICHIERS_PAR_PRECISION[precision])
 
 
@@ -331,7 +331,7 @@ async def _telecharger_fichier(
                 hachage, deja = hashlib.sha256(), 0
                 partiel.unlink(missing_ok=True)
             elif reponse.status_code not in (200, 206):
-                raise ErreurLaya(f"HTTP {reponse.status_code} pour {fichier.chemin}")
+                raise ErreurLaya(f"HTTP {reponse.status_code} for {fichier.chemin}")
             with partiel.open("ab") as sortie:
                 async for bloc in reponse.aiter_bytes(TAILLE_BLOC):
                     sortie.write(bloc)
@@ -342,7 +342,7 @@ async def _telecharger_fichier(
                     etat.octets_telecharges = base + deja
     if deja != fichier.taille or hachage.hexdigest() != fichier.sha256:
         partiel.unlink(missing_ok=True)  # jamais de reprise sur un contenu corrompu
-        raise ErreurLaya(f"{fichier.chemin} : empreinte SHA-256 invalide (fichier rejeté)")
+        raise ErreurLaya(f"{fichier.chemin}: invalid SHA-256 checksum (file rejected)")
     partiel.replace(cible)
     _marquer_verifie(dossier, fichier)
     _alteres.discard((str(dossier), fichier.chemin))
@@ -376,8 +376,8 @@ async def executer_telechargement(etat: EtatTelechargement, precision: str) -> N
     except ErreurLaya as exc:
         etat.statut, etat.erreur = "erreur", str(exc)
     except (httpx.HTTPError, OSError) as exc:
-        etat.statut, etat.erreur = "erreur", f"téléchargement interrompu ({type(exc).__name__})"
+        etat.statut, etat.erreur = "erreur", f"download interrupted ({type(exc).__name__})"
     except Exception as exc:  # noqa: BLE001 — ne jamais geler l'état
-        etat.statut, etat.erreur = "erreur", f"Erreur inattendue : {type(exc).__name__}"
+        etat.statut, etat.erreur = "erreur", f"Unexpected error: {type(exc).__name__}"
     finally:
         etat.en_cours = False

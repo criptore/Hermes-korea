@@ -111,7 +111,7 @@ async def test_redirection_vers_ip_privee_refusee(monkeypatch):
             return httpx.Response(302, headers={"location": "http://127.0.0.1/admin"})
         raise AssertionError("la cible privée ne doit jamais être contactée")
 
-    with pytest.raises(ErreurTelechargementDocument, match="non publique"):
+    with pytest.raises(ErreurTelechargementDocument, match="Non-public"):
         await _telecharger_url("http://example.test/a", transport=httpx.MockTransport(handler))
 
 

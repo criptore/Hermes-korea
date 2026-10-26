@@ -165,7 +165,7 @@ def _ecrire_cache(session: Session, cle: str, marches: list, total: int | None) 
             return ligne
         except IntegrityError:  # filet : insertion concurrente hors verrou
             session.rollback()
-    raise DecpIndisponible("écriture du cache DECP impossible")
+    raise DecpIndisponible("cannot write the DECP cache")
 
 
 async def _marches_en_cache(
@@ -393,8 +393,8 @@ async def concurrence(
             resultat["maj_le"] = maj
 
     if demandes and not any(resultat[b] for b in ("acheteur", "secteur")):
-        raise DecpIndisponible("; ".join(erreurs) or "aucune donnée")
+        raise DecpIndisponible("; ".join(erreurs) or "no data")
     if erreurs:
-        resultat["erreur"] = "Certaines données DECP sont indisponibles : " + "; ".join(erreurs)
+        resultat["erreur"] = "Some DECP data is unavailable: " + "; ".join(erreurs)
     return resultat
 

@@ -278,7 +278,7 @@ def test_fichier_modifie_apres_telechargement_alerte_et_checksum_conserve():
         rapport = extraire_documents_appel_offre(session, ao, best_effort=True)
 
         assert rapport.documents_traites == 0
-        assert any("Intégrité compromise" in e for e in rapport.erreurs)
+        assert any("Integrity compromised" in e for e in rapport.erreurs)
         session.refresh(document)
         assert document.integrite_ok is False
         assert document.checksum_sha256 == reference

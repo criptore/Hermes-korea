@@ -7,10 +7,18 @@
 //!   - fermeture : on tue ces enfants à la destruction de la fenêtre
 //!     principale, garantissant l'arrêt complet de HERMES ;
 //!   - crash : sous Windows, les enfants sont rattachés à un Job Object
-//!     « kill-on-close » et meurent aussi si hermes.exe est tué brutalement.
+//!     « kill-on-close » et meurent aussi si hermes.exe est tué brutalement ;
+//!     sous macOS/Linux, le backend reçoit `HERMES_PARENT_PID` (et
+//!     `HERMES_OLLAMA_PID`) et s'arrête de lui-même quand l'app disparaît.
+//!
+//! Emplacements par plateforme :
+//!   - données : `%LOCALAPPDATA%\HERMES` (Windows), `~/Library/Application
+//!     Support/HERMES` (macOS), `$XDG_DATA_HOME/HERMES` (Linux) ;
+//!   - backend : `backend/backend(.exe)` à côté de l'exécutable (installeur
+//!     Windows) ou dans `HERMES.app/Contents/Resources/backend/` (bundle macOS).
 //!
 //! En **debug** (`cargo tauri dev`), on ne lance rien — le développeur garde
-//! la main via `scripts/start-backend.ps1` etc.
+//! la main via `scripts/start-backend.ps1` / `scripts/start-backend.sh`.
 
 use std::fs;
 use std::io::{Read, Write};
@@ -83,7 +91,7 @@ impl ServiceState {
             }
             if let Some(job) = &self.job {
                 if let Err(e) = job.0.assign_process(child.as_raw_handle() as isize) {
-                    eprintln!("[HERMES] Job Object : rattachement impossible ({e})");
+                    eprintln!("[HERMES] Job Object: cannot attach the process ({e})");
                 }
             }
         }
@@ -191,9 +199,35 @@ fn existing_path_from_env(key: &str) -> Option<PathBuf> {
         .filter(|p| p.exists())
 }
 
+#[cfg(unix)]
+fn home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .filter(|p| !p.as_os_str().is_empty())
+}
+
+/// Dossier de données utilisateur HERMES (BDD, documents, journaux, clé maître).
 fn local_app_data_dir() -> PathBuf {
+    #[cfg(target_os = "windows")]
     if let Ok(base) = std::env::var("LOCALAPPDATA") {
         return PathBuf::from(base).join("HERMES");
+    }
+    #[cfg(target_os = "macos")]
+    if let Some(home) = home_dir() {
+        return home
+            .join("Library")
+            .join("Application Support")
+            .join("HERMES");
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let base = std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+            .or_else(|| home_dir().map(|h| h.join(".local").join("share")));
+        if let Some(base) = base {
+            return base.join("HERMES");
+        }
     }
     std::env::current_exe()
         .ok()
@@ -219,9 +253,9 @@ fn hidden_command(exe: &PathBuf) -> Command {
 fn enregistrer(state: &SharedState, mut child: Child, ollama: bool) -> Result<(), String> {
     let mut guard = state
         .lock()
-        .map_err(|_| "État des services indisponible.".to_string())?;
+        .map_err(|_| "Service state unavailable.".to_string())?;
     if !guard.adopter(&mut child) {
-        return Err("Arrêt de HERMES demandé pendant le démarrage.".into());
+        return Err("HERMES shutdown requested during startup.".into());
     }
     if ollama {
         guard.ollama = Some(child);
@@ -237,42 +271,66 @@ fn start_ollama(state: &SharedState) -> Result<(), String> {
         return Ok(());
     }
 
-    let exe = locate_ollama_exe()
-        .ok_or_else(|| "PYTHIA/Ollama introuvable sur cette machine.".to_string())?;
+    let exe = locate_ollama_exe().ok_or_else(|| {
+        "PYTHIA/Ollama not found on this machine (install it from https://ollama.com).".to_string()
+    })?;
 
-    let models_dir = env_or(
-        "OLLAMA_MODELS",
-        &local_app_data_dir()
-            .join("ollama")
-            .join("models")
-            .display()
-            .to_string(),
-    );
-    fs::create_dir_all(&models_dir)
-        .map_err(|e| format!("Création dossier modèles Ollama : {e}"))?;
-
-    let child = hidden_command(&exe)
-        .arg("serve")
-        .env("OLLAMA_MODELS", models_dir)
+    let mut cmd = hidden_command(&exe);
+    cmd.arg("serve");
+    if let Some(models_dir) = ollama_models_dir() {
+        fs::create_dir_all(&models_dir)
+            .map_err(|e| format!("Creating the Ollama models folder: {e}"))?;
+        cmd.env("OLLAMA_MODELS", models_dir);
+    }
+    let child = cmd
         .spawn()
-        .map_err(|e| format!("Lancement Ollama : {e}"))?;
+        .map_err(|e| format!("Starting Ollama: {e}"))?;
     enregistrer(state, child, true)?;
 
     if !wait_until_listening("127.0.0.1", 11434, Duration::from_secs(25)) {
-        return Err("PYTHIA/Ollama n'a pas répondu sur 127.0.0.1:11434.".into());
+        return Err("PYTHIA/Ollama did not answer on 127.0.0.1:11434.".into());
     }
     Ok(())
 }
 
-fn start_backend(state: &SharedState) -> Result<(), String> {
+/// Dossier des modèles imposé à l'Ollama lancé par HERMES. `OLLAMA_MODELS` prime ;
+/// sinon Windows isole les modèles sous `%LOCALAPPDATA%\HERMES`, tandis que
+/// macOS/Linux gardent le dossier par défaut d'Ollama (`~/.ollama/models`),
+/// partagé avec l'app Ollama : pas de second téléchargement de Qwen3.
+fn ollama_models_dir() -> Option<String> {
+    if let Ok(dir) = std::env::var("OLLAMA_MODELS") {
+        return Some(dir);
+    }
+    if cfg!(target_os = "windows") {
+        return Some(
+            local_app_data_dir()
+                .join("ollama")
+                .join("models")
+                .display()
+                .to_string(),
+        );
+    }
+    None
+}
+
+/// PID de l'Ollama lancé par HERMES (aucun s'il tournait déjà) : transmis au
+/// backend pour qu'il l'arrête si l'app est tuée brutalement (macOS/Linux).
+fn pid_ollama_possede(state: &SharedState) -> Option<u32> {
+    state
+        .lock()
+        .ok()
+        .and_then(|guard| guard.ollama.as_ref().map(Child::id))
+}
+
+fn start_backend(state: &SharedState, resource_dir: Option<&Path>) -> Result<(), String> {
     if port_listening("127.0.0.1", 8000) {
         // Le port est pris : on ne réutilise que si c'est bien un backend HERMES.
         if is_hermes_backend(8000) {
             return Ok(());
         }
         return Err(
-            "Le port 8000 est occupé par un autre service que HERMES. \
-             Libère-le puis relance HERMES."
+            "Port 8000 is used by a service other than HERMES. \
+             Free it, then restart HERMES."
                 .into(),
         );
     }
@@ -300,29 +358,46 @@ fn start_backend(state: &SharedState) -> Result<(), String> {
         &data_dir.join("master.key").display().to_string(),
     );
 
-    // 1) Mode bundle final : backend.exe autonome (PyInstaller).
-    if let Some(backend_exe) = locate_backend_exe() {
-        let child = hidden_command(&backend_exe)
-            .env("HERMES_DB_PATH", &db_path)
+    // Surveillance du parent côté backend (macOS/Linux ; Windows : Job Object).
+    let parent_pid = std::process::id().to_string();
+    let ollama_pid = pid_ollama_possede(state).map(|pid| pid.to_string());
+
+    // 1) Mode bundle final : backend autonome (PyInstaller).
+    if let Some(backend_exe) = locate_backend_exe(resource_dir) {
+        let mut cmd = hidden_command(&backend_exe);
+        if let Some(dossier) = backend_exe.parent() {
+            cmd.current_dir(dossier);
+        }
+        cmd.env("HERMES_DB_PATH", &db_path)
             .env("HERMES_STORAGE_PATH", &storage)
             .env("HERMES_LOG_PATH", &log_path)
             .env("HERMES_MASTER_KEY_PATH", &master_key_path)
+            .env("HERMES_PARENT_PID", &parent_pid);
+        if let Some(pid) = &ollama_pid {
+            cmd.env("HERMES_OLLAMA_PID", pid);
+        }
+        let child = cmd
             .spawn()
-            .map_err(|e| format!("Lancement backend.exe : {e}"))?;
+            .map_err(|e| format!("Starting {}: {e}", backend_exe.display()))?;
         enregistrer(state, child, false)?;
     } else {
-        // 2) Fallback dev : python.exe du venv local.
-        let backend_dir = backend_dir
-            .ok_or_else(|| "Backend introuvable (ni backend.exe ni venv Python).".to_string())?;
-        let python = backend_dir.join(r".venv\Scripts\python.exe");
+        // 2) Fallback dev : Python du venv local.
+        let backend_dir = backend_dir.ok_or_else(|| {
+            "Backend not found (no bundled backend and no Python venv).".to_string()
+        })?;
+        let python = venv_python(&backend_dir);
         if !python.exists() {
             return Err(format!(
-                "Python venv backend introuvable : {}",
+                "Backend Python venv not found: {}",
                 python.display()
             ));
         }
 
-        let child = hidden_command(&python)
+        let mut cmd = hidden_command(&python);
+        if let Some(pid) = &ollama_pid {
+            cmd.env("HERMES_OLLAMA_PID", pid);
+        }
+        let child = cmd
             .args([
                 "-m",
                 "uvicorn",
@@ -337,15 +412,73 @@ fn start_backend(state: &SharedState) -> Result<(), String> {
             .env("HERMES_STORAGE_PATH", storage)
             .env("HERMES_LOG_PATH", log_path)
             .env("HERMES_MASTER_KEY_PATH", master_key_path)
+            .env("HERMES_PARENT_PID", &parent_pid)
             .spawn()
-            .map_err(|e| format!("Lancement backend (python) : {e}"))?;
+            .map_err(|e| format!("Starting the backend (python): {e}"))?;
         enregistrer(state, child, false)?;
     }
 
-    if !wait_until_listening("127.0.0.1", 8000, Duration::from_secs(35)) {
-        return Err("Backend HERMES n'a pas répondu sur 127.0.0.1:8000.".into());
+    // Premier lancement macOS : Gatekeeper vérifie le bundle Python, d'où une marge.
+    if !wait_until_listening("127.0.0.1", 8000, Duration::from_secs(60)) {
+        return Err("The HERMES backend did not answer on 127.0.0.1:8000.".into());
     }
     Ok(())
+}
+
+/// Interpréteur du venv backend (dev) : `Scripts\python.exe` sous Windows,
+/// `bin/python` ailleurs.
+fn venv_python(backend_dir: &Path) -> PathBuf {
+    if cfg!(target_os = "windows") {
+        backend_dir.join(".venv").join("Scripts").join("python.exe")
+    } else {
+        backend_dir.join(".venv").join("bin").join("python")
+    }
+}
+
+/// Nom du binaire Ollama sur la plateforme courante.
+fn ollama_bin_name() -> String {
+    format!("ollama{}", std::env::consts::EXE_SUFFIX)
+}
+
+/// Emplacements usuels d'Ollama. Une app macOS lancée depuis le Finder n'hérite
+/// pas du PATH du shell : on liste donc explicitement les installations courantes.
+fn ollama_candidates() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    #[cfg(target_os = "windows")]
+    {
+        for var in ["ProgramFiles", "ProgramFiles(x86)"] {
+            if let Ok(base) = std::env::var(var) {
+                candidates.push(PathBuf::from(base).join("Ollama").join("ollama.exe"));
+            }
+        }
+        if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
+            candidates.push(
+                PathBuf::from(local_app_data)
+                    .join("Programs")
+                    .join("Ollama")
+                    .join("ollama.exe"),
+            );
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let app_cli = Path::new("Ollama.app")
+            .join("Contents")
+            .join("Resources")
+            .join("ollama");
+        candidates.push(Path::new("/Applications").join(&app_cli));
+        if let Some(home) = home_dir() {
+            candidates.push(home.join("Applications").join(&app_cli));
+        }
+        candidates.push(PathBuf::from("/opt/homebrew/bin/ollama"));
+        candidates.push(PathBuf::from("/usr/local/bin/ollama"));
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        candidates.push(PathBuf::from("/usr/local/bin/ollama"));
+        candidates.push(PathBuf::from("/usr/bin/ollama"));
+    }
+    candidates
 }
 
 fn locate_ollama_exe() -> Option<PathBuf> {
@@ -355,44 +488,26 @@ fn locate_ollama_exe() -> Option<PathBuf> {
 
     if let Ok(exe) = std::env::current_exe() {
         if let Some(parent) = exe.parent() {
-            let bundled = parent.join("ollama").join("ollama.exe");
+            let bundled = parent.join("ollama").join(ollama_bin_name());
             if bundled.exists() {
                 return Some(bundled);
             }
         }
     }
 
-    let mut candidates = Vec::new();
-    if let Ok(program_files) = std::env::var("ProgramFiles") {
-        candidates.push(
-            PathBuf::from(&program_files)
-                .join("Ollama")
-                .join("ollama.exe"),
-        );
-    }
-    if let Ok(program_files_x86) = std::env::var("ProgramFiles(x86)") {
-        candidates.push(
-            PathBuf::from(&program_files_x86)
-                .join("Ollama")
-                .join("ollama.exe"),
-        );
-    }
-    if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
-        candidates.push(
-            PathBuf::from(local_app_data)
-                .join("Programs")
-                .join("Ollama")
-                .join("ollama.exe"),
-        );
-    }
-    candidates.into_iter().find(|p| p.exists())
+    ollama_candidates().into_iter().find(|p| p.exists())
 }
 
-fn locate_backend_exe() -> Option<PathBuf> {
+/// Nom du binaire backend PyInstaller sur la plateforme courante.
+fn backend_bin_name() -> String {
+    format!("backend{}", std::env::consts::EXE_SUFFIX)
+}
+
+fn locate_backend_exe(resource_dir: Option<&Path>) -> Option<PathBuf> {
     // Priorités, du plus officiel au moins :
     //   1. variable d'environnement HERMES_BACKEND_EXE
-    //   2. backend\backend.exe à côté de hermes.exe (cas bundle final)
-    //   3. backend\backend.exe découvert depuis le dossier courant.
+    //   2. backend/backend(.exe) à côté de l'exécutable (installeur Windows)
+    //   3. backend/backend dans les ressources du bundle (HERMES.app sous macOS).
 
     if let Some(path) = existing_path_from_env("HERMES_BACKEND_EXE") {
         return Some(path);
@@ -400,22 +515,24 @@ fn locate_backend_exe() -> Option<PathBuf> {
 
     if let Ok(exe) = std::env::current_exe() {
         if let Some(parent) = exe.parent() {
-            let bundled = parent.join("backend").join("backend.exe");
+            let bundled = parent.join("backend").join(backend_bin_name());
             if bundled.exists() {
                 return Some(bundled);
             }
         }
     }
 
-    None
+    resource_dir
+        .map(|dir| dir.join("backend").join(backend_bin_name()))
+        .filter(|p| p.exists())
 }
 
 fn locate_backend_dir() -> Result<PathBuf, String> {
     let exe = std::env::current_exe()
-        .map_err(|e| format!("Impossible de localiser l'exécutable : {e}"))?;
+        .map_err(|e| format!("Cannot locate the executable: {e}"))?;
     let mut dir = exe
         .parent()
-        .ok_or_else(|| "Exécutable sans dossier parent".to_string())?
+        .ok_or_else(|| "Executable has no parent folder".to_string())?
         .to_path_buf();
 
     for _ in 0..8 {
@@ -429,7 +546,7 @@ fn locate_backend_dir() -> Result<PathBuf, String> {
         }
     }
 
-    Err("Dossier backend/ introuvable depuis l'exécutable HERMES.".into())
+    Err("backend/ folder not found from the HERMES executable.".into())
 }
 
 /// Démarre PYTHIA puis le backend en émettant l'état de chaque service.
@@ -439,6 +556,7 @@ fn start_services(app: &tauri::AppHandle) {
     let Some(state) = app.try_state::<SharedState>() else {
         return;
     };
+    let resource_dir = app.path().resource_dir().ok();
 
     emettre(app, "pythia", "demarrage", None);
     match start_ollama(&state) {
@@ -450,7 +568,7 @@ fn start_services(app: &tauri::AppHandle) {
     }
 
     emettre(app, "backend", "demarrage", None);
-    match start_backend(&state) {
+    match start_backend(&state, resource_dir.as_deref()) {
         Ok(()) => emettre(app, "backend", "pret", None),
         Err(e) => {
             eprintln!("[HERMES] Backend : {e}");
@@ -517,8 +635,8 @@ fn afficher_fenetre(app: &tauri::AppHandle) {
     }
 }
 
-const LIBELLE_PAUSE: &str = "Mettre la veille en pause";
-const LIBELLE_REPRISE: &str = "Reprendre la veille";
+const LIBELLE_PAUSE: &str = "Pause the watch";
+const LIBELLE_REPRISE: &str = "Resume the watch";
 
 fn construire_tray(app: &tauri::App) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, MenuItemBuilder};
@@ -534,17 +652,20 @@ fn construire_tray(app: &tauri::App) -> tauri::Result<()> {
         }
     }
     let menu = MenuBuilder::new(app)
-        .item(&MenuItemBuilder::with_id("ouvrir", "Ouvrir HERMES").build(app)?)
-        .item(&MenuItemBuilder::with_id("veille", "Lancer une veille maintenant").build(app)?)
+        .item(&MenuItemBuilder::with_id("ouvrir", "Open HERMES").build(app)?)
+        .item(&MenuItemBuilder::with_id("veille", "Run a watch cycle now").build(app)?)
         .item(&item_pause)
         .separator()
-        .item(&MenuItemBuilder::with_id("quitter", "Quitter").build(app)?)
+        .item(&MenuItemBuilder::with_id("quitter", "Quit HERMES").build(app)?)
         .build()?;
 
+    // macOS : l'icône de la barre des menus ouvre son menu au clic (convention
+    // système) ; Windows/Linux : clic gauche = fenêtre, clic droit = menu.
+    let menu_au_clic_gauche = cfg!(target_os = "macos");
     let mut tray = TrayIconBuilder::with_id("hermes")
         .tooltip("HERMES")
         .menu(&menu)
-        .show_menu_on_left_click(false)
+        .show_menu_on_left_click(menu_au_clic_gauche)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "ouvrir" => afficher_fenetre(app),
             "veille" => {
@@ -557,7 +678,10 @@ fn construire_tray(app: &tauri::App) -> tauri::Result<()> {
             "quitter" => quitter_hermes(app),
             _ => {}
         })
-        .on_tray_icon_event(|tray, event| {
+        .on_tray_icon_event(move |tray, event| {
+            if menu_au_clic_gauche {
+                return;
+            }
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
@@ -610,14 +734,14 @@ async fn choisir_destination_pdf(
         .dialog()
         .file()
         .set_file_name(nom_defaut)
-        .add_filter("Document PDF", &["pdf"])
+        .add_filter("PDF document", &["pdf"])
         .blocking_save_file();
     let Some(choix) = choix else {
         return Ok(None);
     };
     let chemin = choix
         .into_path()
-        .map_err(|e| format!("Chemin de destination invalide : {e}"))?;
+        .map_err(|e| format!("Invalid destination path: {e}"))?;
     let chemin = normaliser_extension_pdf(chemin)?;
     let affichage = chemin.display().to_string();
     destination.memoriser(chemin);
@@ -634,7 +758,7 @@ fn normaliser_extension_pdf(chemin: PathBuf) -> Result<PathBuf, String> {
     {
         Some("pdf") => Ok(chemin),
         None => Ok(chemin.with_extension("pdf")),
-        Some(_) => Err("Seuls les exports PDF peuvent être enregistrés.".into()),
+        Some(_) => Err("Only PDF exports can be saved.".into()),
     }
 }
 
@@ -647,12 +771,12 @@ fn enregistrer_fichier(
     destination: tauri::State<'_, DestinationExport>,
 ) -> Result<(), String> {
     let chemin = destination.consommer().ok_or_else(|| {
-        "Aucune destination choisie : ouvrez d'abord « Enregistrer sous ».".to_string()
+        "No destination chosen: open \"Save as\" first.".to_string()
     })?;
     let tauri::ipc::InvokeBody::Raw(octets) = request.body() else {
-        return Err("Contenu du fichier manquant.".into());
+        return Err("File content missing.".into());
     };
-    fs::write(&chemin, octets).map_err(|e| format!("Écriture de {} : {e}", chemin.display()))
+    fs::write(&chemin, octets).map_err(|e| format!("Writing {}: {e}", chemin.display()))
 }
 
 #[cfg(test)]
@@ -722,10 +846,10 @@ pub fn run() {
         .setup(|app| {
             if let Err(e) = construire_tray(app) {
                 // Le tray est un confort : sans lui, l'app reste pleinement utilisable.
-                eprintln!("[HERMES] Zone de notification indisponible : {e}");
+                eprintln!("[HERMES] System tray / menu bar icon unavailable: {e}");
             }
             // En dev, on ne touche pas aux services — le développeur les
-            // gère lui-même via les scripts PowerShell. En release, on lance
+            // gère lui-même via les scripts (PowerShell ou shell). En release, on lance
             // tout ce qu'il faut, hors du thread UI (jusqu'à ~60 s d'attente).
             #[cfg(not(debug_assertions))]
             {
@@ -767,11 +891,11 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("Erreur au démarrage de HERMES")
-        .run(|app, event| {
+        .expect("Error while starting HERMES")
+        .run(|app, event| match event {
             // Filet de sécurité : quelle que soit la voie de sortie (menu Quitter,
-            // app.exit), backend et PYTHIA sont arrêtés.
-            if matches!(event, tauri::RunEvent::Exit) {
+            // Cmd+Q, app.exit), backend et PYTHIA sont arrêtés.
+            tauri::RunEvent::Exit => {
                 use tauri::Manager;
                 if let Some(state) = app.try_state::<SharedState>() {
                     if let Ok(mut guard) = state.lock() {
@@ -779,5 +903,13 @@ pub fn run() {
                     }
                 }
             }
+            // macOS : clic sur l'icône du Dock alors que la fenêtre est cachée
+            // (réduite dans la barre des menus) → on la réaffiche.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen {
+                has_visible_windows: false,
+                ..
+            } => afficher_fenetre(app),
+            _ => {}
         });
 }

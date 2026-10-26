@@ -280,7 +280,7 @@ def _record_vers_ao(rec: dict[str, Any]) -> AOCollecte:
         rec.get("objet")
         or rec.get("titre_marche")
         or rec.get("nomacheteur")
-        or "Avis BOAMP (sans titre)"
+        or "BOAMP notice (untitled)"
     )
     titre = str(titre).strip()
     if len(titre) > 500:
@@ -453,7 +453,7 @@ def extraire_identifiants(donnees: Any) -> tuple[str | None, str | None]:
         return _extraire_identifiants(donnees)
     except Exception as exc:  # noqa: BLE001 — filet volontaire, cf. docstring
         logger.warning(
-            "ARGOS/BOAMP : identifiants (SIRET/CPV) illisibles, avis conservé sans eux — {}: {}",
+            "ARGOS/BOAMP: unreadable identifiers (SIRET/CPV), notice kept without them — {}: {}",
             type(exc).__name__,
             exc,
         )

@@ -124,7 +124,7 @@ def detail(ao_id: int, session: Session = Depends(get_session)) -> AppelOffreRea
         .where(AppelOffre.id == ao_id)
     ).first()
     if row is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
     ao, portail_nom = row
     scores = _scores_recents(session, [ao.id])
     docs = _docs_telecharges(session, [ao.id])
@@ -187,15 +187,15 @@ def modifier_statut(
 ) -> AppelOffreRead:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     if payload.statut != ao.statut:
         if payload.statut not in _STATUTS_MANUELS:
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    f"Statut '{payload.statut.value}' non modifiable manuellement "
-                    "(piloté par le système)"
+                    f"Status '{payload.statut.value}' cannot be changed manually "
+                    "(system-managed)"
                 ),
             )
         if payload.statut == StatutAO.REPONDU and not _a_reponse_finalisee(
@@ -204,8 +204,8 @@ def modifier_statut(
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    "Statut 'repondu' impossible : aucune réponse HERMION "
-                    "validée ou exportée pour cet AO"
+                    "Cannot set status 'repondu': no approved or exported "
+                    "HERMION response for this tender"
                 ),
             )
         ao.statut = payload.statut

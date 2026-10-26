@@ -535,7 +535,7 @@ function signalAvecTimeout(
   if (signal?.aborted) ctrl.abort(signal.reason);
   else signal?.addEventListener("abort", surAbandon, { once: true });
   const timer = setTimeout(
-    () => ctrl.abort(new Error(`Délai dépassé (${Math.round(timeoutMs / 1000)} s)`)),
+    () => ctrl.abort(new Error(`Timed out (${Math.round(timeoutMs / 1000)} s)`)),
     timeoutMs,
   );
   return {
@@ -573,7 +573,7 @@ async function fetchJsonBrut<T>(path: string, init?: RequestInit): Promise<T> {
     // Remonte le `detail` FastAPI quand il est présent : message bien plus
     // lisible que le seul code HTTP (ex. « PYTHIA est down » sur un 502).
     const detail = await lireDetailErreur(r);
-    throw new Error(detail ?? `${r.status} ${r.statusText} sur ${path}`);
+    throw new Error(detail ?? `${r.status} ${r.statusText} on ${path}`);
   }
   return (await r.json()) as T;
 }
@@ -832,7 +832,7 @@ export const api = {
     const r = await fetch(`${API_BASE}/hermion/reponses/${id}/export`);
     if (!r.ok) {
       const detail = await lireDetailErreur(r);
-      throw new Error(detail ?? `${r.status} ${r.statusText} sur l'export`);
+      throw new Error(detail ?? `${r.status} ${r.statusText} on export`);
     }
     return r.blob();
   },

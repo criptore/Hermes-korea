@@ -1,10 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec — produit backend.exe pour HERMES.
+"""PyInstaller spec — produit le backend autonome HERMES (backend.exe / backend).
 
 À lancer depuis backend/ :
     pyinstaller hermes_entry.spec --noconfirm
 
-Le binaire résultat se trouve dans `dist/backend/backend.exe` (mode onedir).
+Le binaire résultat se trouve dans `dist/backend/backend.exe` (Windows) ou
+`dist/backend/backend` (macOS/Linux), en mode onedir. Sous macOS il est copié
+dans `HERMES.app/Contents/Resources/backend/` par `scripts/build-macos.sh`.
 """
 
 from PyInstaller.utils.hooks import collect_all, collect_submodules

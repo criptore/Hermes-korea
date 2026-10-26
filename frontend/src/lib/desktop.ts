@@ -178,7 +178,7 @@ export async function choisirFichiers(
     const { open } = await import("@tauri-apps/plugin-dialog");
     const choix = await open({
       multiple: options.multiple ?? false,
-      filters: options.extensions ? [{ name: "Fichiers", extensions: options.extensions }] : [],
+      filters: options.extensions ? [{ name: "Files", extensions: options.extensions }] : [],
     });
     return choix === null ? [] : Array.isArray(choix) ? choix : [choix];
   }

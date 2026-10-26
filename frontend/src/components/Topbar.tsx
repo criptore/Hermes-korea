@@ -25,11 +25,11 @@ type Props = {
 };
 
 const TITLES: Record<ViewKey, { main: string; sub: string }> = {
-  accueil:   { main: "Accueil",        sub: "Vue d'ensemble" },
-  tenders:   { main: "Appels d'offre", sub: "Veille active" },
-  responses: { main: "Réponses",       sub: "File de validation" },
-  journal:   { main: "Journal",        sub: "Activité des agents" },
-  settings:  { main: "Paramètres",     sub: "Configuration" },
+  accueil:   { main: "Home",           sub: "Overview" },
+  tenders:   { main: "Tenders",        sub: "Active watch" },
+  responses: { main: "Responses",      sub: "Approval queue" },
+  journal:   { main: "Journal",        sub: "Agent activity" },
+  settings:  { main: "Settings",       sub: "Configuration" },
 };
 
 export function Topbar({
@@ -73,20 +73,20 @@ export function Topbar({
           <Icon.clock size={12} />
           {enPause ? (
             <span role="status">
-              Veille <strong>en pause</strong>
+              Watch <strong>paused</strong>
               {onTogglePause && (
                 <button
                   className="btn btn--ghost btn--sm"
                   style={{ marginLeft: 8 }}
                   onClick={onTogglePause}
                 >
-                  Reprendre
+                  Resume
                 </button>
               )}
             </span>
           ) : (
             <span>
-              Prochain cycle dans <strong>{nextCycle}</strong>
+              Next cycle in <strong>{nextCycle}</strong>
             </span>
           )}
           {onLaunchArgos && (
@@ -98,10 +98,10 @@ export function Topbar({
               transition={RESSORT.net}
               onClick={onLaunchArgos}
               disabled={isLoading}
-              title="Déclenche immédiatement une collecte ARGOS (sans attendre le cycle)"
+              title="Run an ARGOS collection now (without waiting for the next cycle)"
             >
               <Icon.refresh size={11} />
-              {isLoading ? "Collecte…" : "Lancer ARGOS"}
+              {isLoading ? "Collecting…" : "Run ARGOS"}
             </motion.button>
           )}
         </div>

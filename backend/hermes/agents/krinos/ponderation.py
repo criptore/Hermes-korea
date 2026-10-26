@@ -50,11 +50,11 @@ class Ponderation:
     )
 
     LIBELLES: ClassVar[dict[str, str]] = {
-        "affinite_metier": "Affinité métier",
-        "references": "Références",
-        "adequation_budget": "Adéquation budget",
-        "capacite_equipe": "Capacité équipe",
-        "calendrier": "Risque calendrier",
+        "affinite_metier": "Business fit",
+        "references": "References",
+        "adequation_budget": "Budget fit",
+        "capacite_equipe": "Team capacity",
+        "calendrier": "Schedule risk",
     }
 
     def en_dict(self) -> dict[str, int]:
@@ -112,7 +112,7 @@ def enregistrer_ponderation(session: Session, ponderation: Ponderation) -> Ponde
         entree = Parametre(
             cle=CLE_PARAMETRE,
             valeur=payload,
-            description="Pondération KRINOS — poids par dimension de scoring (JSON)",
+            description="KRINOS weighting — weight per scoring dimension (JSON)",
         )
     else:
         entree.valeur = payload
@@ -207,7 +207,7 @@ def enregistrer_composite(session: Session, config: ConfigComposite) -> ConfigCo
         entree = Parametre(
             cle=CLE_COMPOSITE,
             valeur=payload,
-            description="Score composite go/no-go — pondérations et seuil (JSON)",
+            description="Go/no-go composite score — weights and threshold (JSON)",
         )
     else:
         entree.valeur = payload

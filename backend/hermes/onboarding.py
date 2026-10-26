@@ -54,7 +54,7 @@ def marquer_termine(session: Session) -> None:
         entree = Parametre(
             cle=CLE_PARAMETRE,
             valeur="true",
-            description="Onboarding finalisé — déverrouille les collectes ARGOS",
+            description="Onboarding complete — unlocks ARGOS collections",
         )
     else:
         entree.valeur = "true"

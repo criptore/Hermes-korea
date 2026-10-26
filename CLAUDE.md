@@ -50,7 +50,7 @@ modules et les logs. C'est l'identité du projet.
 
 - **Backend** : Python 3.12 + FastAPI 0.115 + SQLModel 0.0.22 + Uvicorn
 - **Frontend** : Vite 5 + React 18 + TypeScript 5 + Tailwind 3
-- **Desktop** : Tauri 2 (Rust) — wrapper natif
+- **Desktop** : Tauri 2 (Rust) — wrapper natif, Windows 10/11 et macOS 11+
 - **BDD** : SQLite (mode WAL) via SQLModel
 - **Scraping** : Playwright Python + APScheduler
 - **LLM** : Ollama (HTTP local sur 11434) + Qwen3 8B q4 (override via `HERMES_PYTHIA_MODELE`)
@@ -153,8 +153,12 @@ Les modèles sont stockés dans `D:\HermesDeps\ollama\models`.
   des types réels (pas des chaînes). Sinon `list["AppelOffre"]` casse au mapping.
 - Datetimes : **timezone-aware UTC** (`datetime.now(timezone.utc)`), jamais
   `datetime.utcnow()` (déprécié en 3.12).
-- Tous les noms publics en **français** (variables, endpoints, tables) — c'est
-  la langue de travail du projet et de l'utilisateur final.
+- Noms de code en **français** (variables, endpoints, tables) — langue de
+  travail du projet. **Tout texte visible par l'utilisateur est en anglais**
+  (UI, messages d'API, journaux des agents, prompts PYTHIA) depuis le passage
+  de l'app en anglais ; la langue des textes générés suit
+  `HERMES_PYTHIA_LANGUE_SORTIE` (défaut English), les mots-clés de veille
+  celle des portails (`HERMES_LANGUE_PORTAILS`, défaut French).
 - Pour les relations SQLModel : utiliser `List` (typing) plutôt que `list` natif
   pour garder l'introspection SQLAlchemy heureuse.
 
@@ -294,6 +298,23 @@ d'annoncer une avancée.
 - Interrompre Joshua uniquement pour : choix d'architecture irréversible, FAIL
   après 2 boucles, action destructive. Rapport court en fin de lot.
 - Env macOS : venv `backend/.venv` en Python 3.11 (`python3.11 -m venv .venv`).
+
+---
+
+## 🍎 macOS
+
+- Scripts `scripts/*.sh` (équivalents des `.ps1`) : `setup-macos.sh`,
+  `start-pythia.sh`, `start-backend.sh`, `start-desktop.sh`, `kill-hermes.sh`,
+  `build-backend.sh`, `build-macos.sh` (app + DMG), `smoke-macos.sh`,
+  `sync-version.sh` (même liste de fichiers que `sync-version.ps1` : garder les
+  deux alignés).
+- Données : `~/Library/Application Support/HERMES` ; backend embarqué dans
+  `HERMES.app/Contents/Resources/backend/` ; modèles Ollama dans
+  `~/.ollama/models` (partagés avec l'app Ollama).
+- Pas de Job Object : le backend surveille `HERMES_PARENT_PID`
+  (`hermes/surveillance_parent.py`) et s'arrête avec l'app.
+- Détails, signature et notarisation : `docs/macos.md`. CI : jobs
+  `desktop-macos` (ci.yml) et workflow `macos-bundle.yml` (DMG + test de fumée).
 
 ---
 

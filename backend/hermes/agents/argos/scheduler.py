@@ -80,13 +80,13 @@ class ArgosScheduler:
         self._sched = AsyncIOScheduler(timezone="UTC")
         self._sched.start()
         self.synchroniser_jobs()
-        logger.info("ARGOS scheduler démarré")
+        logger.info("ARGOS scheduler started")
 
     def arreter(self) -> None:
         if self._sched is not None:
             self._sched.shutdown(wait=False)
             self._sched = None
-            logger.info("ARGOS scheduler arrêté")
+            logger.info("ARGOS scheduler stopped")
 
     def synchroniser_jobs(self) -> None:
         """(Re)programme un job par portail actif dont le scraper existe.
@@ -104,7 +104,7 @@ class ArgosScheduler:
             if not onboarding.est_termine(session):
                 for job in self._sched.get_jobs():
                     self._sched.remove_job(job.id)
-                logger.info("ARGOS : collectes en attente (onboarding non finalisé)")
+                logger.info("ARGOS: collections on hold (onboarding not complete)")
                 return
             _creer_portails_publics_manquants(session)
             portails = session.exec(select(Portail).where(Portail.actif)).all()
@@ -180,7 +180,7 @@ async def _executer_job(nom_portail: str) -> None:
             async with verrou_portail(nom_portail):
                 await executer_collecte(scraper, session)
         except Exception:  # noqa: BLE001
-            logger.exception("Échec job ARGOS {}", nom_portail)
+            logger.exception("ARGOS job failed: {}", nom_portail)
         # Le pipeline est volontairement hors du try ci-dessus : il doit
         # tourner même si une collecte a partiellement échoué (d'autres AO
         # peuvent être en attente). `traiter_pipeline` ne propage rien.
@@ -189,7 +189,7 @@ async def _executer_job(nom_portail: str) -> None:
 
             await traiter_pipeline(session)
         except Exception:  # noqa: BLE001
-            logger.exception("Échec pipeline autonome après collecte {}", nom_portail)
+            logger.exception("Autonomous pipeline failed after collection {}", nom_portail)
 
 
 scheduler_global = ArgosScheduler()

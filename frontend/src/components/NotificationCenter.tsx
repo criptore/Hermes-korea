@@ -18,10 +18,16 @@ const COULEUR_NIVEAU: Record<NiveauLog, string> = {
 // tous les warning/error). Volontairement étroit : le journal complet reste
 // disponible dans l'onglet Journal.
 const MARQUEURS = [
-  "réponse v", // HERMION : réponse vN générée
+  "response v", // HERMION: response vN generated
+  "exported to PDF",
+  "Autonomous pipeline",
+  "Collection ", // ARGOS: Collection boamp: N new…
+  "KRINOS analysis complete",
+  // Entries written before the English switch (older MNEMOSYNE databases).
+  "réponse v",
   "exportée en PDF",
   "Pipeline autonome",
-  "Collecte ", // ARGOS : Collecte boamp : N nouveaux…
+  "Collecte ",
   "Analyse KRINOS terminée",
 ];
 
@@ -34,11 +40,11 @@ function tempsRelatif(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (Number.isNaN(diff)) return "";
   const min = Math.floor(diff / 60_000);
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `il y a ${h} h`;
-  return `il y a ${Math.floor(h / 24)} j`;
+  if (h < 24) return `${h} h ago`;
+  return `${Math.floor(h / 24)} d ago`;
 }
 
 type Props = { onOpenJournal?: () => void };
@@ -110,7 +116,7 @@ export function NotificationCenter({ onOpenJournal }: Props) {
         onClick={ouvrir}
         title="Notifications"
         style={{ position: "relative" }}
-        aria-label={`Notifications${nonLus > 0 ? ` (${nonLus} non lues)` : ""}`}
+        aria-label={`Notifications${nonLus > 0 ? ` (${nonLus} unread)` : ""}`}
       >
         <Icon.bell size={14} />
         {nonLus > 0 && (
@@ -193,7 +199,7 @@ export function NotificationCenter({ onOpenJournal }: Props) {
                   fontSize: 12.5,
                 }}
               >
-                Rien à signaler pour l'instant.
+                Nothing to report yet.
               </div>
             ) : (
               logs.slice(0, 25).map((log) => (
@@ -246,7 +252,7 @@ export function NotificationCenter({ onOpenJournal }: Props) {
                   onOpenJournal();
                 }}
               >
-                Voir le journal complet
+                View the full log
               </button>
             )}
           </motion.div>

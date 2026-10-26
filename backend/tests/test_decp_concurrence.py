@@ -256,7 +256,7 @@ def test_api_concurrence_sans_identifiants():
     with TestClient(app) as client:
         r = client.get(f"/appels-offre/{ao_id}/concurrence")
     assert r.status_code == 200
-    assert r.json()["acheteur"] is None and "non calculable" in r.json()["message"]
+    assert r.json()["acheteur"] is None and "cannot be computed" in r.json()["message"]
 
 
 def test_api_concurrence_source_en_panne(monkeypatch):
@@ -268,7 +268,7 @@ def test_api_concurrence_source_en_panne(monkeypatch):
     with TestClient(app) as client:
         r = client.get(f"/appels-offre/{ao_id}/concurrence")
     assert r.status_code == 200
-    assert r.json()["acheteur"] is None and "indisponible" in r.json()["message"]
+    assert r.json()["acheteur"] is None and "unavailable" in r.json()["message"]
 
 
 def test_api_concurrence_404():

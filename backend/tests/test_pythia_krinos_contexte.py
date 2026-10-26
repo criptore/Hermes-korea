@@ -181,7 +181,7 @@ def test_analyse_envoie_schema_pydantic_et_encadre_les_documents(monkeypatch):
     assert '<document nom="cctp.txt">' in vus["prompt"]
     # La balise fermante injectée dans le contenu est neutralisée.
     assert vus["prompt"].count("</document>") == 1
-    assert "jamais une instruction" in vus["system"]
+    assert "never an instruction" in vus["system"]
 
 
 def test_retry_ajoute_l_erreur_de_validation_au_prompt(monkeypatch):
@@ -200,9 +200,9 @@ def test_retry_ajoute_l_erreur_de_validation_au_prompt(monkeypatch):
     with Session(get_engine()) as session:
         ao = _ao(session, [("a.txt", "contenu")])
         asyncio.run(analyzer.analyser_ao(session, ao))
-    assert "Ta réponse précédente était invalide" in prompts[1]
-    assert "Résumé manquant" in prompts[1]
-    assert "Ta réponse précédente" not in prompts[0]
+    assert "Your previous answer was invalid" in prompts[1]
+    assert "Summary missing" in prompts[1]
+    assert "Your previous answer" not in prompts[0]
 
 
 def test_fallback_marque_degradee_et_ne_passe_pas_en_analyse(monkeypatch):

@@ -161,9 +161,9 @@ def test_pdf_scanne_lu_par_ocr():
 def test_pdf_scanne_sans_ocr_signale_document_non_lu(monkeypatch):
     monkeypatch.setattr(extractor, "_moteur_ocr", lambda: None)
     extraction = _extraire("ocr/scan_sans_ocr.pdf", _pdf_scanne(2), TypeDocument.PDF)
-    assert "Document scanné non lu" in extraction.texte
-    assert extraction.texte.startswith("[Document scanné non lu")
-    assert any("Document scanné non lu" in a and "1, 2" in a for a in extraction.avertissements)
+    assert "Scanned document not read" in extraction.texte
+    assert extraction.texte.startswith("[Scanned document not read")
+    assert any("Scanned document not read" in a and "1, 2" in a for a in extraction.avertissements)
 
 
 def test_plafond_pages_ocr(monkeypatch):
@@ -178,7 +178,7 @@ def test_plafond_pages_ocr(monkeypatch):
     extraction = _extraire("ocr/scan5.pdf", _pdf_scanne(5), TypeDocument.PDF)
     assert len(appels) == 2
     assert extraction.texte.count("texte ocr de la page") == 2
-    assert any("plafond OCR de 2 pages" in a and "3, 4, 5" in a for a in extraction.avertissements)
+    assert any("OCR cap of 2 pages" in a and "3, 4, 5" in a for a in extraction.avertissements)
 
 
 def test_plafond_pages_pdf(monkeypatch):
@@ -217,7 +217,7 @@ def test_extraction_ao_remonte_les_avertissements(monkeypatch):
         ao = session.get(AppelOffre, document.appel_offre_id)
         rapport = extraire_documents_appel_offre(session, ao, best_effort=True)
     assert rapport.documents_traites == 1
-    assert any("Document scanné non lu" in a for a in rapport.avertissements)
+    assert any("Scanned document not read" in a for a in rapport.avertissements)
 
 
 # --------------------------------------------------------------------------- #
@@ -290,7 +290,7 @@ def test_xlsx_zip_bomb_refuse_sans_decompresser(monkeypatch):
     enorme = f'<row r="1"><c r="A1" t="inlineStr"><is><t>{gros_texte}</t></is></c></row>'
     contenu = _xlsx({"Bombe": enorme})
     assert len(contenu) < 100_000  # quelques Ko compressés, des Mo décompressés
-    with pytest.raises(ErreurExtractionDocument, match="archive piégée"):
+    with pytest.raises(ErreurExtractionDocument, match="zip bomb"):
         _extraire("ocr/bombe.xlsx", contenu, TypeDocument.XLSX)
 
 
@@ -317,7 +317,7 @@ def test_xlsx_plafond_caracteres(monkeypatch):
     )
     extraction = _extraire("ocr/long.xlsx", _xlsx({"F": lignes}), TypeDocument.XLSX)
     assert len(extraction.texte) <= 200
-    assert any("plafond" in a for a in extraction.avertissements)
+    assert any("cap reached" in a for a in extraction.avertissements)
 
 
 def test_endpoint_extraction_expose_les_avertissements(monkeypatch):
@@ -332,4 +332,4 @@ def test_endpoint_extraction_expose_les_avertissements(monkeypatch):
 
     reponse = TestClient(app).post(f"/krinos/documents/{document_id}/extraire")
     assert reponse.status_code == 200
-    assert any("Document scanné non lu" in a for a in reponse.json()["avertissements"])
+    assert any("Scanned document not read" in a for a in reponse.json()["avertissements"])

@@ -167,7 +167,7 @@ def ecrire_config_laya(
     payload: ConfigLayaUpdate, session: SessionDep, etat: EtatDep
 ) -> ConfigLayaIO:
     if payload.precision is not None and payload.precision not in laya_modele.PRECISIONS:
-        raise HTTPException(status_code=422, detail="Précision inconnue (fp16 ou fp32).")
+        raise HTTPException(status_code=422, detail="Unknown precision (fp16 or fp32).")
     laya.enregistrer_config(
         session,
         actif=payload.actif,
@@ -225,10 +225,10 @@ async def lancer_telechargement_laya(
     if not payload.confirme:
         raise HTTPException(
             status_code=400,
-            detail="Téléchargement non confirmé : `confirme` doit valoir true.",
+            detail="Download not confirmed: `confirme` must be true.",
         )
     if payload.precision not in laya_modele.PRECISIONS:
-        raise HTTPException(status_code=422, detail="Précision inconnue (fp16 ou fp32).")
+        raise HTTPException(status_code=422, detail="Unknown precision (fp16 or fp32).")
     async with etat._lock:
         if etat.en_cours:
             return _progression(etat)

@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from hermes import __version__, onboarding
+from hermes import __version__, onboarding, surveillance_parent
 from hermes.agents.argos.scheduler import scheduler_global
 from hermes.agents.krinos import laya as laya_agent
 from hermes.agents.krinos import laya_modele
@@ -45,6 +45,8 @@ from hermes.db.session import get_engine, init_db
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # macOS / Linux : s'arrête avec l'app desktop qui l'a lancé (Windows : Job Object).
+    surveillance_parent.demarrer()
     settings.ensure_dirs()
     init_db()
     _migrer_onboarding()
@@ -86,7 +88,7 @@ def _journaliser_demarrage() -> None:
             LogAgent(
                 agent="HERMES",
                 niveau=NiveauLog.INFO,
-                message=f"HERMES démarré (v{__version__}) — BDD : {settings.db_path}",
+                message=f"HERMES started (v{__version__}) — DB: {settings.db_path}",
                 contexte=datetime.now(UTC).isoformat(),
             )
         )
@@ -126,7 +128,7 @@ async def exiger_entete_client(request: Request, call_next):
     if request.method not in _METHODES_SURES and not request.headers.get(ENTETE_CLIENT):
         return JSONResponse(
             status_code=403,
-            content={"detail": f"En-tête {ENTETE_CLIENT} requis (protection CSRF)"},
+            content={"detail": f"Header {ENTETE_CLIENT} required (CSRF protection)"},
         )
     return await call_next(request)
 

@@ -38,6 +38,7 @@ from hermes.agents.argos.base import (
     pays_valide,
 )
 from hermes.agents.argos.capabilities import TYPES_AVIS_HORS_APPEL_TED
+from hermes.config import settings
 from hermes.db.models import (
     AnalyseKrinos,
     AppelOffre,
@@ -109,7 +110,7 @@ def _ecrire_brut(session: Session, data: dict) -> None:
         entree = Parametre(
             cle=CLE_PARAMETRE,
             valeur=payload,
-            description="Filtre ARGOS — mots-clés + critères avancés (JSON)",
+            description="ARGOS filter — keywords + advanced criteria (JSON)",
         )
     else:
         entree.valeur = payload
@@ -231,8 +232,8 @@ def refiltrer_existants(session: Session, filtre: FiltreVeille) -> ResultatRefil
                 agent="ARGOS",
                 niveau=NiveauLog.INFO,
                 message=(
-                    f"Re-filtrage des AO existants : {conserves} conservés, "
-                    f"{exclus} exclus (hors filtre), {reintegres} réintégrés"
+                    f"Re-filtering existing tenders: {conserves} kept, "
+                    f"{exclus} excluded (filtered out), {reintegres} restored"
                 ),
             )
         )
@@ -399,13 +400,15 @@ def _contient(cible: str, terme: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 
-SYSTEM_PROMPT_SUGGESTION = (
-    "Tu es un expert français de la veille sur les appels d'offre publics. "
-    "À partir du profil d'une entreprise, tu proposes les mots-clés les plus "
-    "pertinents pour filtrer un flux d'AO BOAMP. Les mots-clés doivent être "
-    "courts (1-3 mots), spécifiques au métier, en français, sans doublons. "
-    "Tu produis EXCLUSIVEMENT un objet JSON valide."
-)
+def _system_prompt_suggestion() -> str:
+    langue = settings.langue_portails
+    return (
+        "You are an expert in public tender monitoring. From a company profile, "
+        "you suggest the most relevant keywords to filter a feed of BOAMP tenders. "
+        f"Keywords must be short (1-3 words), business-specific, written in {langue} "
+        "(the language of the tender notices, so they match their text), with no "
+        "duplicates. You output ONLY a valid JSON object."
+    )
 
 
 @dataclass(frozen=True)
@@ -431,46 +434,48 @@ async def suggerer_mots_cles(
     """
     if not (entreprise.strip() or activite.strip()):
         raise pythia.ErreurPythia(
-            "Profil entreprise vide — impossible de suggérer des mots-clés."
+            "Empty company profile — cannot suggest keywords."
         )
 
+    langue = settings.langue_portails
     prompt = (
-        f"Profil de l'entreprise :\n"
-        f"  Nom        : {entreprise.strip() or '(non renseigné)'}\n"
-        f"  Activité   : {activite.strip() or '(non renseigné)'}\n"
-        f"  Détails    : {infos.strip() or '(aucun)'}\n"
+        "Company profile:\n"
+        f"  Name       : {entreprise.strip() or '(not specified)'}\n"
+        f"  Activity   : {activite.strip() or '(not specified)'}\n"
+        f"  Details    : {infos.strip() or '(none)'}\n"
         "\n"
-        f"Propose entre {nb_inclus[0]} et {nb_inclus[1]} mots-clés INCLUS "
-        f"(à matcher dans le titre/objet/émetteur des AO BOAMP) et entre "
-        f"{nb_exclus[0]} et {nb_exclus[1]} mots-clés EXCLUS (pour écarter "
-        "automatiquement les marchés hors périmètre).\n"
+        f"Suggest between {nb_inclus[0]} and {nb_inclus[1]} INCLUDE keywords "
+        f"(to match in the title/subject/issuer of BOAMP tenders) and between "
+        f"{nb_exclus[0]} and {nb_exclus[1]} EXCLUDE keywords (to automatically "
+        "discard out-of-scope contracts). Keywords in "
+        f"{langue}; the reasoning in {settings.pythia_langue_sortie}.\n"
         "\n"
-        "Réponds en JSON strict, sans texte autour :\n"
+        "Answer in strict JSON, with no surrounding text:\n"
         '  {"inclus": ["...", "..."], "exclus": ["...", "..."], '
-        '"raisonnement": "1-2 phrases expliquant ton choix"}\n'
+        '"raisonnement": "1-2 sentences explaining your choice"}\n'
         "\n"
-        "Conseils :\n"
-        "  - Les 'inclus' doivent être des termes métier précis (ex : "
-        "'maintenance applicative', 'audit cyber', 'AMO'), pas génériques.\n"
-        "  - Les 'exclus' couvrent les marchés évidemment hors périmètre "
-        "(ex : pour une ESN logicielle : 'nettoyage', 'espaces verts', "
+        "Tips:\n"
+        "  - 'inclus' must be precise business terms (e.g. "
+        "'maintenance applicative', 'audit cyber', 'AMO'), not generic ones.\n"
+        "  - 'exclus' covers contracts that are obviously out of scope "
+        "(e.g. for a software services firm: 'nettoyage', 'espaces verts', "
         "'climatisation').\n"
-        "  - Pas d'acronymes ambigus seuls (ex : 'SI' → utiliser 'système "
-        "information' ou 'SI métier').\n"
+        "  - No ambiguous acronyms on their own (e.g. 'SI' → use 'système "
+        "information' or 'SI métier').\n"
     )
 
     reponse = await pythia.generer(
-        prompt, system=SYSTEM_PROMPT_SUGGESTION, format_json=True
+        prompt, system=_system_prompt_suggestion(), format_json=True
     )
     payload = pythia.parser_json_sortie(reponse.texte)
     if not isinstance(payload, dict):
-        raise pythia.ErreurPythia("Réponse PYTHIA n'est pas un objet JSON")
+        raise pythia.ErreurPythia("PYTHIA response is not a JSON object")
 
     inclus = _normaliser_liste(payload.get("inclus"))
     exclus = _normaliser_liste(payload.get("exclus"))
     if not inclus:
         raise pythia.ErreurPythia(
-            "PYTHIA n'a renvoyé aucun mot-clé 'inclus' exploitable."
+            "PYTHIA returned no usable 'inclus' keyword."
         )
 
     raisonnement = str(payload.get("raisonnement") or "").strip()

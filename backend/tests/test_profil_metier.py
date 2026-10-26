@@ -64,7 +64,7 @@ def test_profil_metier_analyzer_combine_profil_et_mots_cles():
         enregistrer_filtre(s, FiltreVeille(inclus=("maintenance",)))
         enregistrer_profil(s, ProfilMetier(activite="ESN Java", effectif=12))
         texte = analyzer._profil_metier(s)
-    assert "ESN Java" in texte and "12 personnes" in texte and "maintenance" in texte
+    assert "ESN Java" in texte and "12 people" in texte and "maintenance" in texte
     assert len(texte) <= LONGUEUR_MAX_TEXTE
 
 

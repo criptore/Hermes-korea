@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "HERMES — Veille & Réponse AO",
+        "title": "HERMES — Tender Watch & Response",
         "width": 1400,
         "height": 900,
         "minWidth": 1100,
@@ -30,7 +30,8 @@
     "active": true,
     "targets": "all",
     "category": "Productivity",
-    "shortDescription": "Veille et réponse automatisée aux appels d'offre, 100% locale.",
+    "shortDescription": "Automated public tender watch and response, 100% local.",
+    "longDescription": "HERMES watches public tender portals, analyses tender documents with a local LLM and drafts responses. Everything runs on your machine; final submission always stays human.",
     "icon": [
       "icons/icon.ico"
     ]

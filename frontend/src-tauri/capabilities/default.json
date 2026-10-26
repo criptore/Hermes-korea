@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions minimales de la fenêtre principale HERMES.",
+  "description": "Minimal permissions for the main HERMES window.",
   "windows": ["main"],
   "permissions": [
     "core:event:allow-listen",

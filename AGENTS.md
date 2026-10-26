@@ -51,6 +51,11 @@ D:\HermesDeps\ollama\bin\ollama.exe list
 PYTHIA uses the standalone Ollama binary in `D:\HermesDeps\ollama\bin`, with
 models stored in `D:\HermesDeps\ollama\models`.
 
+On macOS, use the shell equivalents (`./scripts/setup-macos.sh`,
+`start-pythia.sh`, `start-backend.sh`, `start-desktop.sh`, `build-macos.sh`);
+see `docs/macos.md`. All user-facing text (UI, API messages, agent logs, PYTHIA
+prompts) is in English; code identifiers stay French.
+
 ## Local Storage Constraints
 
 For HERMES setup work, place downloads and heavy caches on `D:` whenever the tool

@@ -45,7 +45,7 @@ def dechiffrer_credentials(blob: bytes | None) -> dict[str, str] | None:
     if blob is None:
         return None
     if not blob.startswith(_PREFIX) or len(blob) <= len(_PREFIX) + _NONCE_SIZE:
-        raise ErreurCredentials("Format de credentials chiffrés invalide")
+        raise ErreurCredentials("Invalid encrypted credentials format")
 
     key = _charger_cle_maitre()
     offset = len(_PREFIX)
@@ -55,7 +55,7 @@ def dechiffrer_credentials(blob: bytes | None) -> dict[str, str] | None:
         payload = AESGCM(key).decrypt(nonce, ciphertext, associated_data=_PREFIX)
         data = json.loads(payload.decode("utf-8"))
     except Exception as exc:  # noqa: BLE001
-        raise ErreurCredentials("Impossible de déchiffrer les credentials") from exc
+        raise ErreurCredentials("Cannot decrypt the credentials") from exc
 
     if not isinstance(data, dict) or not all(
         isinstance(k, str) and isinstance(v, str) for k, v in data.items()
@@ -89,9 +89,9 @@ def _normaliser_cle(valeur: str) -> bytes:
     try:
         key = base64.urlsafe_b64decode(_padding_base64(brute))
     except Exception as exc:  # noqa: BLE001
-        raise ErreurCredentials("Clé maître invalide : base64 attendu") from exc
+        raise ErreurCredentials("Invalid master key: base64 expected") from exc
     if len(key) != _KEY_SIZE:
-        raise ErreurCredentials("Clé maître invalide : 32 octets requis")
+        raise ErreurCredentials("Invalid master key: 32 bytes required")
     return key
 
 
@@ -103,6 +103,6 @@ def _valider_credentials(credentials: dict[str, Any]) -> None:
     if not credentials:
         raise ErreurCredentials("Credentials vides")
     if not all(isinstance(k, str) and k.strip() for k in credentials):
-        raise ErreurCredentials("Toutes les clés de credentials doivent être non vides")
+        raise ErreurCredentials("All credential keys must be non-empty")
     if not all(isinstance(v, str) for v in credentials.values()):
-        raise ErreurCredentials("Toutes les valeurs de credentials doivent être des chaînes")
+        raise ErreurCredentials("All credential values must be strings")

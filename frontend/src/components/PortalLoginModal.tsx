@@ -20,8 +20,8 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
       onClose();
       onToast({
         title: "ARGOS",
-        app: "Portail ajouté",
-        msg: `Session ${name || "Portail"} capturée et chiffrée. ARGOS l'utilisera au prochain cycle.`,
+        app: "Portal added",
+        msg: `${name || "Portal"} session captured and encrypted. ARGOS will use it on the next cycle.`,
         agent: "argos",
       });
     }, 1800);
@@ -37,9 +37,9 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
   }, [onClose]);
 
   const steps = [
-    { n: 1, label: "Identifier le portail" },
-    { n: 2, label: "Connexion interactive" },
-    { n: 3, label: "Capture de session" },
+    { n: 1, label: "Identify the portal" },
+    { n: 2, label: "Interactive sign-in" },
+    { n: 3, label: "Session capture" },
   ];
 
   return (
@@ -51,12 +51,12 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
           </button>
           <div className="modal__eyebrow">
             <HermesMark size={14} />
-            <span>HERMES · Première connexion</span>
+            <span>HERMES · First sign-in</span>
           </div>
-          <h3 className="modal__title">Ajouter un portail de veille</h3>
+          <h3 className="modal__title">Add a monitored portal</h3>
           <p className="modal__sub">
-            Connectez-vous une seule fois dans la fenêtre Playwright. ARGOS conservera la
-            session chiffrée et la rejouera à chaque cycle.
+            Sign in once in the Playwright window. ARGOS will keep the encrypted session
+            and replay it on every cycle.
           </p>
         </div>
 
@@ -85,8 +85,8 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                 <Icon.warning size={12} />
               </span>
               <span>
-                Aucun mot de passe n'est jamais stocké en clair. Seule la session est
-                conservée.
+                No password is ever stored in plain text. Only the session is
+                kept.
               </span>
             </div>
           </div>
@@ -103,12 +103,12 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                       textTransform: "uppercase",
                     }}
                   >
-                    Nom du portail
+                    Portal name
                   </label>
                   <input
                     className="input"
                     style={{ marginTop: 6 }}
-                    placeholder="ex. Maximilien"
+                    placeholder="e.g. Maximilien"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoFocus
@@ -123,7 +123,7 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                       textTransform: "uppercase",
                     }}
                   >
-                    URL de connexion
+                    Sign-in URL
                   </label>
                   <input
                     className="input"
@@ -152,12 +152,12 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                     }}
                   >
                     <Icon.warning size={13} />
-                    <span style={{ fontWeight: 500 }}>Comportement de la session</span>
+                    <span style={{ fontWeight: 500 }}>How the session works</span>
                   </div>
                   <span style={{ color: "var(--fg-3)" }}>
-                    Une fenêtre Playwright va s'ouvrir. Connectez-vous normalement (2FA,
-                    captcha, etc.). Dès que la page d'accueil du portail est visible,
-                    fermez la fenêtre — HERMES capturera automatiquement la session.
+                    A Playwright window will open. Sign in as usual (2FA, captcha,
+                    etc.). As soon as the portal's home page is visible, close the
+                    window — HERMES will capture the session automatically.
                   </span>
                 </div>
                 <div style={{ flex: 1 }} />
@@ -178,17 +178,17 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                     </div>
                   </div>
                   <div className="browser-mock__content">
-                    <h3>Connexion à {name || "Maximilien"}</h3>
+                    <h3>Sign in to {name || "Maximilien"}</h3>
                     <div className="browser-mock__form">
                       <div className="browser-mock__field">
-                        <label>Identifiant</label>
-                        <input type="text" defaultValue="utilisateur-demo" />
+                        <label>Username</label>
+                        <input type="text" defaultValue="demo-user" />
                       </div>
                       <div className="browser-mock__field">
-                        <label>Mot de passe</label>
+                        <label>Password</label>
                         <input type="password" defaultValue="••••••••••••" />
                       </div>
-                      <button className="browser-mock__submit">Se connecter</button>
+                      <button className="browser-mock__submit">Sign in</button>
                     </div>
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                     />
                   </span>
                   <span>
-                    Fenêtre Playwright active — connectez-vous puis revenez ici.
+                    Playwright window open — sign in, then come back here.
                   </span>
                 </div>
               </>
@@ -235,10 +235,10 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                   }}
                 />
                 <div style={{ fontSize: 14, fontWeight: 500 }}>
-                  Capture de la session…
+                  Capturing the session…
                 </div>
                 <div style={{ fontSize: 12, color: "var(--fg-3)" }}>
-                  Chiffrement AES-256 puis stockage local sécurisé.
+                  AES-256 encryption, then secure local storage.
                 </div>
               </div>
             )}
@@ -248,7 +248,7 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
         <div className="modal__foot">
           <div className="modal__foot-state">
             <span>
-              Étape <strong style={{ color: "var(--fg)" }}>{step}</strong> / 3
+              Step <strong style={{ color: "var(--fg)" }}>{step}</strong> / 3
             </span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -257,7 +257,7 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                 className="btn btn--ghost"
                 onClick={() => setStep((step - 1) as 1 | 2)}
               >
-                Précédent
+                Back
               </button>
             )}
             {step < 2 && (
@@ -266,12 +266,12 @@ export function PortalLoginModal({ onClose, onToast }: Props) {
                 onClick={() => setStep(2)}
                 disabled={!name || !url}
               >
-                Ouvrir Playwright
+                Open Playwright
               </button>
             )}
             {step === 2 && (
               <button className="btn btn--gold" onClick={() => setStep(3)}>
-                J'ai terminé la connexion
+                I have finished signing in
               </button>
             )}
           </div>

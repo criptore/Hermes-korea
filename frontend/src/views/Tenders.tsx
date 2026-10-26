@@ -123,11 +123,11 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
           <span className="loading-banner__icon" />
           <span>
             <strong style={{ color: "var(--argos)", letterSpacing: "0.08em" }}>ARGOS</strong>{" "}
-            collecte de nouveaux appels d'offre…
+            is collecting new tenders…
           </span>
           <div className="loading-banner__bar" />
           <span style={{ color: "var(--fg-3)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
-            scrapers ARGOS
+            ARGOS scrapers
           </span>
         </div>
       )}
@@ -138,7 +138,7 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
           <input
             ref={champRecherche}
             type="text"
-            placeholder="Rechercher un appel d'offre, un émetteur…"
+            placeholder="Search tenders, issuers…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -150,7 +150,7 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
         >
           {allPortals.map((p) => (
             <option key={p} value={p}>
-              {p === "all" ? "Tous les portails" : p}
+              {p === "all" ? "All portals" : p}
             </option>
           ))}
         </select>
@@ -161,12 +161,12 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
         >
           {allTags.map((t) => (
             <option key={t} value={t}>
-              {t === "all" ? "Tous les tags" : t}
+              {t === "all" ? "All tags" : t}
             </option>
           ))}
         </select>
         <div className="filter-slider">
-          <span>Score min.</span>
+          <span>Min. score</span>
           <input
             type="range"
             min="0"
@@ -180,33 +180,33 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
         <button
           className={`btn btn--sm${horsFiltre ? "" : " btn--ghost"}`}
           aria-pressed={horsFiltre}
-          title="Afficher les AO écartés par les filtres ou qui ne sont pas des appels à concurrence"
+          title="Show tenders discarded by the filters or that are not calls for competition"
           onClick={() => {
             setSelectedId(null);
             setHorsFiltre((v) => !v);
           }}
         >
-          Hors filtre
+          Filtered out
         </button>
         <div style={{ flex: 1 }} />
         <button className="btn btn--ghost btn--sm" onClick={() => void reload()}>
-          <Icon.refresh size={11} /> Rafraîchir
+          <Icon.refresh size={11} /> Refresh
         </button>
       </div>
 
       <div className={`tender-layout${selected ? "" : " tender-layout--no-panel"}`}>
         <div className="tender-list">
           <div className="tender-list__count">
-            <strong>{filtered.length}</strong> appel{filtered.length > 1 ? "s" : ""} d'offre —{" "}
-            {urgentCount} urgent{urgentCount > 1 ? "s" : ""}
+            <strong>{filtered.length}</strong> tender{filtered.length > 1 ? "s" : ""} —{" "}
+            {urgentCount} urgent
           </div>
 
           {apiError && (
             <div className="loading-banner loading-banner--error">
               <Icon.warning size={13} />
               <span>
-                Backend indisponible : {apiError}. Vérifiez que le launcher HERMES a bien
-                démarré l'API locale.
+                Backend unavailable: {apiError}. Check that HERMES has started the
+                local API.
               </span>
             </div>
           )}
@@ -273,8 +273,8 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
             <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--fg-3)" }}>
               <p>
                 {apiError
-                  ? "Aucun appel d'offre chargé depuis MNEMOSYNE."
-                  : "Aucun appel d'offre ne correspond aux filtres."}
+                  ? "No tenders loaded from MNEMOSYNE."
+                  : "No tenders match the filters."}
               </p>
               <button
                 className="btn btn--ghost btn--sm"
@@ -285,7 +285,7 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
                   setTag("all");
                 }}
               >
-                Réinitialiser les filtres
+                Reset filters
               </button>
             </div>
           )}
@@ -328,10 +328,10 @@ function mapAppelOffre(ao: AppelOffre): Tender {
   return {
     id: String(ao.id),
     title: ao.titre,
-    issuer: ao.emetteur ?? "Émetteur non renseigné",
+    issuer: ao.emetteur ?? "Issuer not specified",
     portal:
       ao.portail_nom?.toUpperCase() ??
-      (ao.portail_id ? `Portail #${ao.portail_id}` : "Source directe"),
+      (ao.portail_id ? `Portal #${ao.portail_id}` : "Direct source"),
     deadline: ao.date_limite,
     budget: formatBudget(ao.budget_estime, ao.devise),
     reference: ao.reference_externe ?? `AO-${ao.id}`,
@@ -340,12 +340,12 @@ function mapAppelOffre(ao: AppelOffre): Tender {
     tags,
     summary:
       ao.objet ??
-      "AO collecté par ARGOS. L'analyse KRINOS n'a pas encore produit de résumé détaillé.",
+      "Tender collected by ARGOS. KRINOS has not produced a detailed summary yet.",
     keypoints: [
-      `Statut MNEMOSYNE : ${statutLabel(ao.statut)}`,
-      ao.date_publication ? `Publication : ${formatDate(ao.date_publication)}` : "Publication non renseignée",
-      ao.url_source ? `Source : ${ao.url_source}` : "URL source non renseignée",
-      `Documents : ${ao.documents_telecharges}/${ao.documents_detectes} téléchargé(s)`,
+      `MNEMOSYNE status: ${statutLabel(ao.statut)}`,
+      ao.date_publication ? `Published: ${formatDate(ao.date_publication)}` : "Publication date not specified",
+      ao.url_source ? `Source: ${ao.url_source}` : "Source URL not specified",
+      `Documents: ${ao.documents_telecharges}/${ao.documents_detectes} downloaded`,
     ],
     status: statutLabel(ao.statut),
     statutApi: ao.statut,
@@ -372,9 +372,9 @@ function HorsProfilBadge({ tender }: { tender: Tender }) {
         padding: "2px 6px",
         whiteSpace: "nowrap",
       }}
-      title="Laya juge cet AO hors de votre profil : il n'a pas été analysé par PYTHIA. Ouvrez-le pour forcer l'analyse."
+      title="Laya judges this tender outside your profile: PYTHIA has not analysed it. Open it to force the analysis."
     >
-      Hors profil (Laya)
+      Off-profile (Laya)
     </motion.span>
   );
 }
@@ -401,8 +401,8 @@ function DocumentsBadge({ tender }: { tender: Tender }) {
       }}
       title={
         complet
-          ? "Tous les documents détectés sont téléchargés en local"
-          : "Des documents détectés ne sont pas encore téléchargés"
+          ? "All detected documents are downloaded locally"
+          : "Some detected documents are not downloaded yet"
       }
     >
       <Icon.document size={11} />
@@ -412,8 +412,8 @@ function DocumentsBadge({ tender }: { tender: Tender }) {
 }
 
 function formatBudget(value: number | null, devise: string): string {
-  if (value === null) return "Budget non renseigné";
-  return new Intl.NumberFormat("fr-FR", {
+  if (value === null) return "Budget not specified";
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: devise || "EUR",
     maximumFractionDigits: 0,
@@ -421,7 +421,7 @@ function formatBudget(value: number | null, devise: string): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("fr-FR", {
+  return new Date(value).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -430,14 +430,14 @@ function formatDate(value: string): string {
 
 function statutLabel(statut: string): string {
   const labels: Record<string, string> = {
-    brut: "Brut",
-    analyse: "En analyse",
-    a_repondre: "À répondre",
-    en_redaction: "En rédaction",
-    repondu: "Répondu",
-    rejete: "Rejeté",
-    expire: "Expiré",
-    hors_filtre: "Hors filtre",
+    brut: "Raw",
+    analyse: "Analysed",
+    a_repondre: "To answer",
+    en_redaction: "Drafting",
+    repondu: "Answered",
+    rejete: "Rejected",
+    expire: "Expired",
+    hors_filtre: "Filtered out",
   };
   return labels[statut] ?? statut;
 }
@@ -454,9 +454,9 @@ function NonAnalyse() {
         padding: "3px 8px",
         whiteSpace: "nowrap",
       }}
-      title="KRINOS n'a pas encore analysé cet AO"
+      title="KRINOS has not analysed this tender yet"
     >
-      Non analysé
+      Not analysed
     </span>
   );
 }
@@ -507,8 +507,8 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
     setProgression(null);
     onToast({
       title: "HERMION",
-      app: "Rédaction lancée",
-      msg: "PYTHIA prépare la réponse — comptez 30 à 90 s selon la longueur du dossier.",
+      app: "Drafting started",
+      msg: "PYTHIA is preparing the response — allow 30 to 90 s depending on the size of the tender file.",
       agent: "hermion",
     });
     const aoId = Number(tender.id);
@@ -539,15 +539,15 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
       onChanged();
       onToast({
         title: "HERMION",
-        app: `Réponse v${result.reponse.version} générée`,
-        msg: `${result.reponse.longueur_mots ?? "?"} mots — disponible dans l'onglet « Réponses ».`,
+        app: `Response v${result.reponse.version} drafted`,
+        msg: `${result.reponse.longueur_mots ?? "?"} words — available in the "Responses" tab.`,
         agent: "hermion",
       });
     } catch (error) {
       onToast({
         title: "HERMION",
-        app: "Rédaction en échec",
-        msg: error instanceof Error ? error.message : "Erreur inconnue.",
+        app: "Drafting failed",
+        msg: error instanceof Error ? error.message : "Unknown error.",
         agent: "hermion",
       });
     } finally {
@@ -562,19 +562,19 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
       await api.modifierStatutAO(Number(tender.id), status);
       onToast({
         title: status === "a_repondre" ? "HERMION" : "ARGOS",
-        app: status === "a_repondre" ? "AO marqué à répondre" : "Appel d'offre exclu",
+        app: status === "a_repondre" ? "Tender marked to answer" : "Tender excluded",
         msg:
           status === "a_repondre"
-            ? "Le statut a été enregistré dans MNEMOSYNE. HERMION pourra préparer un brouillon."
-            : "Le statut rejeté a été enregistré dans MNEMOSYNE.",
+            ? "Status saved in MNEMOSYNE. HERMION can now prepare a draft."
+            : "Rejected status saved in MNEMOSYNE.",
         agent: status === "a_repondre" ? "hermion" : "argos",
       });
       onChanged();
     } catch (error) {
       onToast({
         title: "HERMES",
-        app: "Action impossible",
-        msg: error instanceof Error ? error.message : "Erreur inconnue pendant la mise à jour.",
+        app: "Action failed",
+        msg: error instanceof Error ? error.message : "Unknown error during the update.",
         agent: "krinos",
       });
     }
@@ -587,15 +587,15 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
       setAnalyse(next);
       onToast({
         title: "KRINOS",
-        app: "Score recalculé",
-        msg: `Nouveau score pondéré : ${Math.round(next.score)}/100.`,
+        app: "Score recalculated",
+        msg: `New weighted score: ${Math.round(next.score)}/100.`,
         agent: "krinos",
       });
     } catch (error) {
       onToast({
         title: "KRINOS",
-        app: "Recalcul impossible",
-        msg: error instanceof Error ? error.message : "Erreur inconnue pendant le recalcul.",
+        app: "Recalculation failed",
+        msg: error instanceof Error ? error.message : "Unknown error during recalculation.",
         agent: "krinos",
       });
     } finally {
@@ -609,8 +609,8 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
     setRelanceEnCours(true);
     onToast({
       title: "KRINOS",
-      app: "Analyse lancée",
-      msg: "PYTHIA analyse l'AO — résumé, ventilation et score à venir.",
+      app: "Analysis started",
+      msg: "PYTHIA is analysing the tender — summary, breakdown and score coming up.",
       agent: "krinos",
     });
     try {
@@ -618,15 +618,15 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
       setAnalyse(next);
       onToast({
         title: "KRINOS",
-        app: "Analyse terminée",
-        msg: `Score : ${Math.round(next.score)}/100.`,
+        app: "Analysis complete",
+        msg: `Score: ${Math.round(next.score)}/100.`,
         agent: "krinos",
       });
     } catch (error) {
       onToast({
         title: "KRINOS",
-        app: "Analyse impossible",
-        msg: error instanceof Error ? error.message : "PYTHIA est-il démarré ?",
+        app: "Analysis failed",
+        msg: error instanceof Error ? error.message : "Is PYTHIA running?",
         agent: "krinos",
       });
     } finally {
@@ -640,27 +640,27 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
     setDceEnCours(true);
     onToast({
       title: "KRINOS",
-      app: "Téléchargement des documents",
-      msg: "Récupération des avis/documents publics détectés…",
+      app: "Downloading documents",
+      msg: "Fetching the detected public notices/documents…",
       agent: "krinos",
     });
     try {
       const res = await api.telechargerDocumentsAO(Number(tender.id));
       onToast({
         title: "KRINOS",
-        app: "Documents téléchargés",
+        app: "Documents downloaded",
         msg:
           res.documents.length === 0
-            ? "Aucun document public exploitable pour cet AO."
-            : `${res.documents.length} document(s) en local (${res.nouveaux} nouveau(x)).`,
+            ? "No usable public document for this tender."
+            : `${res.documents.length} document(s) stored locally (${res.nouveaux} new).`,
         agent: "krinos",
       });
       onChanged();
     } catch (error) {
       onToast({
         title: "KRINOS",
-        app: "Téléchargement impossible",
-        msg: error instanceof Error ? error.message : "Erreur inconnue.",
+        app: "Download failed",
+        msg: error instanceof Error ? error.message : "Unknown error.",
         agent: "krinos",
       });
     } finally {
@@ -671,7 +671,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
   return (
     <aside className="tender-panel">
       <div className="tender-panel__head">
-        <button className="tender-panel__close" onClick={onClose} title="Fermer">
+        <button className="tender-panel__close" onClick={onClose} title="Close">
           <Icon.close />
         </button>
         <div className="tender-panel__eyebrow">
@@ -694,12 +694,12 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
       <div className="tender-panel__body">
         <div className="tender-panel__section">
           <div className="tender-panel__section-title">
-            <AgentChip agent="krinos" state="active" compact /> Résumé d'analyse
+            <AgentChip agent="krinos" state="active" compact /> Analysis summary
           </div>
           {analyse?.degradee && (
             <p className="tender-panel__summary" role="alert">
-              <strong>Analyse dégradée</strong> : PYTHIA n'a pas fourni de réponse exploitable,
-              ce résumé et ce score sont une estimation locale à confirmer (relancez l'analyse).
+              <strong>Degraded analysis</strong>: PYTHIA did not return a usable answer; this
+              summary and score are a local estimate to confirm (re-run the analysis).
             </p>
           )}
           {analyse?.a_verifier && (
@@ -711,11 +711,11 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
               animate="animate"
               style={{ transformOrigin: "left center" }}
             >
-              <strong>À vérifier</strong> :{" "}
+              <strong>Needs review</strong>:{" "}
               {analyse.suspect_injection
-                ? "le texte de cet AO contient des consignes suspectes visant à influencer l'évaluation automatique. "
-                : "les résultats de l'analyse sont incohérents ou divergents. "}
-              Pas de rédaction automatique — décision humaine requise
+                ? "this tender's text contains suspicious instructions aimed at influencing the automatic evaluation. "
+                : "the analysis results are inconsistent or diverging. "}
+              No automatic drafting — human decision required
               {analyse.drapeaux && analyse.drapeaux.length > 0
                 ? ` (${analyse.drapeaux.join(", ")})`
                 : ""}
@@ -725,46 +725,46 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
           <p className="tender-panel__summary">{analyse?.resume ?? tender.summary}</p>
           {analyse?.score_laya != null && (
             <p className="tender-panel__summary">
-              <strong>Avis Laya</strong> (juge local optionnel) : score{" "}
+              <strong>Laya opinion</strong> (optional local judge): score{" "}
               {Math.round(analyse.score_laya)} / 100
               {analyse.confiance_laya != null
-                ? `, confiance ${Math.round(analyse.confiance_laya * 100)} %`
+                ? `, confidence ${Math.round(analyse.confiance_laya * 100)} %`
                 : ""}
               {analyse.details_laya?.pertinence != null
-                ? `, pertinence ${Math.round(analyse.details_laya.pertinence * 100)} %`
+                ? `, relevance ${Math.round(analyse.details_laya.pertinence * 100)} %`
                 : ""}
-              . Score PYTHIA (local) : {Math.round(analyse.score)} / 100.
+              . PYTHIA score (local): {Math.round(analyse.score)} / 100.
               {analyse.composite != null
-                ? ` Composite go/no-go : ${Math.round(analyse.composite)} / 100 (${
+                ? ` Composite go/no-go: ${Math.round(analyse.composite)} / 100 (${
                     analyse.verdict_composite === "go"
                       ? "go"
                       : analyse.verdict_composite === "no_go"
                         ? "no-go"
-                        : "à vérifier par un humain"
-                  }, indicatif).`
+                        : "to be checked by a human"
+                  }, indicative).`
                 : ""}
             </p>
           )}
         </div>
 
         <div className="tender-panel__section">
-          <div className="tender-panel__section-title">Informations clés</div>
+          <div className="tender-panel__section-title">Key information</div>
           <dl className="kv">
-            <dt>Émetteur</dt>
+            <dt>Issuer</dt>
             <dd>{tender.issuer}</dd>
-            <dt>Référence</dt>
+            <dt>Reference</dt>
             <dd style={{ fontFamily: "var(--font-mono)" }}>{tender.reference}</dd>
             <dt>Budget</dt>
             <dd>{tender.budget}</dd>
-            <dt>Portail</dt>
+            <dt>Portal</dt>
             <dd>{tender.portal}</dd>
-            <dt>Date limite</dt>
+            <dt>Deadline</dt>
             <dd>
               {formatted}
               {urgent && (
-                <span style={{ color: "var(--hermion)", marginLeft: 8 }}>J−{days}</span>
+                <span style={{ color: "var(--hermion)", marginLeft: 8 }}>D−{days}</span>
               )}
-              {echu && <span style={{ color: "var(--fg-4)", marginLeft: 8 }}>Échu</span>}
+              {echu && <span style={{ color: "var(--fg-4)", marginLeft: 8 }}>Expired</span>}
             </dd>
           </dl>
         </div>
@@ -772,7 +772,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
         <ConcurrenceDecp aoId={Number(tender.id)} />
 
         <div className="tender-panel__section">
-          <div className="tender-panel__section-title">Points d'attention</div>
+          <div className="tender-panel__section-title">Points of attention</div>
           <ul className="keypoints">
             {tender.keypoints.map((k, i) => (
               <li key={i}>{k}</li>
@@ -781,7 +781,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
         </div>
 
         <div className="tender-panel__section">
-          <div className="tender-panel__section-title">Pondération du score</div>
+          <div className="tender-panel__section-title">Score weighting</div>
           <ScoreBreakdown
             loading={analyseLoading}
             scores={analyse?.scores_dimensions ?? null}
@@ -816,7 +816,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
                   ? ` — section ${progression.index}/${progression.total}`
                   : "") +
                 (progression.message ? ` · ${progression.message}` : "")
-              : "Initialisation…"}
+              : "Starting…"}
           </span>
           {progression && (
             <span
@@ -833,56 +833,56 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
           className="btn btn--gold"
           onClick={() => void updateStatus("a_repondre")}
         >
-          <Icon.check size={13} /> Marquer à répondre
+          <Icon.check size={13} /> Mark to answer
         </button>
         <button
           className="btn btn--ghost"
           onClick={() => void updateStatus("rejete")}
         >
-          <Icon.close size={13} /> Exclure
+          <Icon.close size={13} /> Exclude
         </button>
         <button
           className="btn"
           onClick={() => void rediger()}
           disabled={redigerEnCours}
-          title="Lance HERMION pour rédiger une réponse à cet AO (statut a_repondre requis)"
+          title="Run HERMION to draft a response to this tender (requires the “to answer” status)"
         >
           <Icon.refresh size={13} />
-          {redigerEnCours ? "Rédaction…" : "Rédiger une réponse"}
+          {redigerEnCours ? "Drafting…" : "Draft a response"}
         </button>
         {aDimensions ? (
           <button
             className="btn"
             onClick={() => void recalculerScore()}
             disabled={recalculEnCours}
-            title="Recalcule le score avec la pondération KRINOS actuelle, sans relancer PYTHIA"
+            title="Recalculate the score with the current KRINOS weighting, without re-running PYTHIA"
           >
             <Icon.refresh size={13} />
-            {recalculEnCours ? "Recalcul…" : "Recalculer score"}
+            {recalculEnCours ? "Recalculating…" : "Recalculate score"}
           </button>
         ) : (
           <button
             className="btn"
             onClick={() => void relancerAnalyse()}
             disabled={relanceEnCours || analyseLoading}
-            title="Lance une analyse KRINOS complète (PYTHIA) : résumé, ventilation et score"
+            title="Run a full KRINOS analysis (PYTHIA): summary, breakdown and score"
           >
             <Icon.refresh size={13} />
             {relanceEnCours
-              ? "Analyse…"
+              ? "Analysing…"
               : tender.horsProfilLaya
-                ? "Forcer l'analyse"
-                : "Lancer l'analyse"}
+                ? "Force analysis"
+                : "Run analysis"}
           </button>
         )}
         <button
           className="btn"
           onClick={() => void telechargerDce()}
           disabled={dceEnCours}
-          title="Télécharge en local les documents/avis publics détectés (best-effort)"
+          title="Download the detected public documents/notices locally (best effort)"
         >
           <Icon.download size={13} />
-          {dceEnCours ? "Téléchargement…" : "Télécharger DCE"}
+          {dceEnCours ? "Downloading…" : "Download tender file"}
         </button>
       </div>
     </aside>
@@ -892,11 +892,11 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
 type DimensionScore = keyof Omit<PonderationKrinos, "total">;
 
 const SCORE_DIMENSIONS: { id: DimensionScore; label: string }[] = [
-  { id: "affinite_metier", label: "Affinité métier" },
-  { id: "references", label: "Références" },
-  { id: "adequation_budget", label: "Adéquation budget" },
-  { id: "capacite_equipe", label: "Capacité équipe" },
-  { id: "calendrier", label: "Risque calendrier" },
+  { id: "affinite_metier", label: "Business fit" },
+  { id: "references", label: "References" },
+  { id: "adequation_budget", label: "Budget fit" },
+  { id: "capacite_equipe", label: "Team capacity" },
+  { id: "calendrier", label: "Schedule risk" },
 ];
 
 function ScoreBreakdown({
@@ -909,13 +909,13 @@ function ScoreBreakdown({
   ponderation: PonderationKrinos | null;
 }) {
   if (loading) {
-    return <div style={{ color: "var(--fg-3)", fontSize: 12 }}>Chargement KRINOS…</div>;
+    return <div style={{ color: "var(--fg-3)", fontSize: 12 }}>Loading KRINOS…</div>;
   }
   if (!scores || Object.keys(scores).length === 0) {
     return (
       <div style={{ color: "var(--fg-3)", fontSize: 12, lineHeight: 1.5 }}>
-        Aucune ventilation disponible. Utilise le bouton « Lancer l'analyse » ci-dessous
-        pour que KRINOS produise les scores par dimension.
+        No breakdown available. Use the "Run analysis" button below so KRINOS
+        produces the per-dimension scores.
       </div>
     );
   }
