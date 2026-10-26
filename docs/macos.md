@@ -89,17 +89,23 @@ The pipeline:
 5. `hdiutil` builds `installer/dist/HERMES-<version>-macos-<arch>.dmg` with an
    *Applications* shortcut.
 
-The DMG targets the build machine's architecture. Build on an Apple Silicon Mac
-for `arm64` and on an Intel Mac (or an x86_64 Python under Rosetta) for `x86_64`:
-a universal binary would need a universal2 Python for PyInstaller and is left for
+The DMG targets the build machine's architecture (the CI builds both). Locally,
+build on an Apple Silicon Mac for `arm64` and on an Intel Mac for `x86_64`: a
+universal binary would need a universal2 Python for PyInstaller and is left for
 later.
 
 `smoke-macos.sh` starts the built app with an isolated data folder, waits for the
 bundled backend on `127.0.0.1:8000`, checks `/health` and that MNEMOSYNE was
 created, then kills the app with `SIGKILL` and checks that the backend stops on
 its own. The *macOS bundle* GitHub workflow (`.github/workflows/macos-bundle.yml`)
-runs the build and this smoke test on Apple Silicon runners and uploads the DMG
-as an artifact.
+runs the build and this smoke test on Apple Silicon and Intel runners and uploads
+both DMGs as artifacts. On a `vX.Y.Z` tag, a `release` job publishes them in a
+GitHub Release:
+
+```bash
+./scripts/sync-version.sh 1.2.0     # then commit, PR, merge
+git tag v1.2.0 && git push origin v1.2.0
+```
 
 ### Signing and notarisation (optional)
 
