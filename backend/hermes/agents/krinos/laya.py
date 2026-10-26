@@ -326,9 +326,9 @@ def enregistrer_config(
         data["temperature"] = laya_moteur.borner_temperature(temperature_calibration)
     if precision_poids is not None:
         if precision_poids not in laya_modele.PRECISIONS:
-            raise ValueError(f"précision inconnue : {precision_poids!r}")
+            raise ValueError(f"unknown precision: {precision_poids!r}")
         data["precision"] = precision_poids
-    _ecrire_json(session, CLE_CONFIG, data, "Juge Laya (KRINOS) — réglages (JSON)")
+    _ecrire_json(session, CLE_CONFIG, data, "Laya judge (KRINOS) — settings (JSON)")
 
 
 def enregistrer_actif(session: Session, actif: bool) -> None:
@@ -448,7 +448,7 @@ def _fabrique_moteur(session: Session) -> Callable[[], MoteurLaya]:
         return lambda: moteur
     p = precision(session)
     if not laya_modele.statut_modele(p).installe:
-        raise ModeleLayaAbsent("modèle Laya non installé (téléchargement à confirmer)")
+        raise ModeleLayaAbsent("Laya model not installed (download must be confirmed)")
     dossier, max_tokens = laya_modele.dossier_modele(), settings.laya_max_tokens
     return lambda: laya_moteur.moteur_onnx(dossier, p, max_tokens)
 
@@ -467,7 +467,7 @@ def _journaliser_altere(session: Session, exc: ModeleLayaAltere) -> None:
         LogAgent(
             agent="KRINOS",
             niveau=NiveauLog.ERROR,
-            message=f"Laya : chargement refusé, {exc}",
+            message=f"Laya: loading refused, {exc}",
             contexte=json.dumps({"fichiers": exc.fichiers}),
         )
     )
@@ -491,7 +491,7 @@ async def _inferer(
     except ErreurLaya:
         raise
     except Exception as exc:  # noqa: BLE001 — Laya ne doit jamais casser l'analyse
-        raise ErreurLaya(f"inférence impossible ({type(exc).__name__})") from exc
+        raise ErreurLaya(f"inference failed ({type(exc).__name__})") from exc
 
 
 def interpreter_sorties(
@@ -509,7 +509,7 @@ def interpreter_sorties(
         dimensions[dim] = round(max(0.0, min(100.0, attendu / (len(niveaux) - 1) * 100)), 1)
         confiances[dim] = round(laya_moteur.confiance(p), 4)
     if not dimensions:
-        raise ErreurLaya("réponse Laya sans score exploitable")
+        raise ErreurLaya("Laya response has no usable score")
 
     def _noul(cle: str) -> float | None:
         sortie = sorties.get(cle)
@@ -532,7 +532,7 @@ def interpreter_sorties(
 async def juger(session: Session, state: str, ponderation: Ponderation) -> ResultatLaya:
     """Interroge Laya (local) ; lève `ErreurLaya` en cas de souci."""
     if not est_actif(session):
-        raise ErreurLaya("Laya inactif ou modèle non installé")
+        raise ErreurLaya("Laya disabled or model not installed")
     sorties = await _inferer(session, state, construire_questions())
     return interpreter_sorties(sorties, ponderation, temperature(session))
 
@@ -564,7 +564,7 @@ def enregistrer_pretri(session: Session, actif: bool, seuil: float) -> None:
         session,
         CLE_PRETRI,
         {"actif": bool(actif), "seuil": max(0.0, min(1.0, float(seuil)))},
-        "Laya — pré-tri de pertinence avant KRINOS (JSON)",
+        "Laya — relevance pre-screening before KRINOS (JSON)",
     )
 
 
@@ -574,10 +574,10 @@ async def evaluer_pertinence(session: Session, state: str) -> float:
     Lève `ErreurLaya` en cas de souci ; l'appelant retombe alors sur l'analyse normale.
     """
     if not est_actif(session):
-        raise ErreurLaya("Laya inactif ou modèle non installé")
+        raise ErreurLaya("Laya disabled or model not installed")
     question = construire_questions()["pertinence"]
     sorties = await _inferer(session, state, {"pertinence": question})
     sortie = sorties.get("pertinence")
     if sortie is None or len(sortie.logits) != 2:
-        raise ErreurLaya("réponse Laya sans pertinence exploitable")
+        raise ErreurLaya("Laya response has no usable relevance")
     return max(0.0, min(1.0, laya_moteur.softmax(sortie.logits, temperature(session))[1]))

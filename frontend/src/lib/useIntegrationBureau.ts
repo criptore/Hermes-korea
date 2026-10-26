@@ -69,10 +69,10 @@ export function useIntegrationBureau({ naviguer, lancerVeille, basculerPause }: 
           if (nouveaux.length > 0) {
             await signaler(
               "nouvel_ao",
-              nouveaux.length === 1 ? "Nouvel appel d'offre pertinent" : "Nouveaux appels d'offre",
+              nouveaux.length === 1 ? "New relevant tender" : "New tenders",
               nouveaux.length === 1
                 ? `${nouveaux[0].titre} — score ${nouveaux[0].score}`
-                : `${nouveaux.length} AO au-dessus du seuil KRINOS (${seuil}).`,
+                : `${nouveaux.length} tenders above the KRINOS threshold (${seuil}).`,
               "tenders",
             );
           }
@@ -91,10 +91,10 @@ export function useIntegrationBureau({ naviguer, lancerVeille, basculerPause }: 
           if (nouvelles.length > 0) {
             await signaler(
               "reponse_prete",
-              "Réponse HERMION à valider",
+              "HERMION response to approve",
               nouvelles.length === 1
                 ? `${nouvelles[0].appel_offre_titre} — v${nouvelles[0].version}`
-                : `${nouvelles.length} réponses en attente de validation.`,
+                : `${nouvelles.length} responses awaiting approval.`,
               "responses",
             );
           }
@@ -113,8 +113,8 @@ export function useIntegrationBureau({ naviguer, lancerVeille, basculerPause }: 
           dernierLogPanne = plusRecent;
           await signaler(
             "panne_argos",
-            "ARGOS : panne de collecte",
-            derniere?.message ?? "Une collecte a échoué.",
+            "ARGOS: collection failure",
+            derniere?.message ?? "A collection run failed.",
             "journal",
           );
         }

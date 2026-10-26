@@ -24,12 +24,12 @@ ETAPE_TERMINE = "termine"
 ETAPE_ECHEC = "echec"
 
 LIBELLES = {
-    ETAPE_PREPARATION: "Préparation du contexte",
-    ETAPE_PLAN: "Construction du plan de réponse",
-    ETAPE_REDACTION: "Rédaction des sections",
-    ETAPE_FINALISATION: "Finalisation du document",
-    ETAPE_TERMINE: "Terminé",
-    ETAPE_ECHEC: "Échec",
+    ETAPE_PREPARATION: "Preparing context",
+    ETAPE_PLAN: "Building the response outline",
+    ETAPE_REDACTION: "Drafting sections",
+    ETAPE_FINALISATION: "Finalising the document",
+    ETAPE_TERMINE: "Done",
+    ETAPE_ECHEC: "Failed",
 }
 
 

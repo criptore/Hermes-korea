@@ -62,12 +62,12 @@ def exporter_reponse_pdf(session: Session, reponse: ReponseHermion) -> Path:
     Lève `ErreurExportPdf` si la réponse n'est pas validée (ou déjà exportée).
     """
     if reponse.id is None:
-        raise ErreurExportPdf("Réponse non persistée")
+        raise ErreurExportPdf("Response not saved")
 
     if reponse.statut not in {StatutReponse.VALIDEE, StatutReponse.EXPORTEE}:
         raise ErreurExportPdf(
-            f"Réponse en statut '{reponse.statut.value}' — seule une réponse "
-            "validée peut être exportée."
+            f"Response has status '{reponse.statut.value}' — only an approved "
+            "response can be exported."
         )
 
     ao = session.get(AppelOffre, reponse.appel_offre_id)
@@ -88,7 +88,7 @@ def exporter_reponse_pdf(session: Session, reponse: ReponseHermion) -> Path:
             agent="HERMION",
             niveau=NiveauLog.INFO,
             message=(
-                f"Réponse {reponse.id} v{reponse.version} exportée en PDF "
+                f"Response {reponse.id} v{reponse.version} exported to PDF "
                 f"({reponse.chemin_export})"
             ),
             appel_offre_id=reponse.appel_offre_id,
@@ -113,10 +113,10 @@ def _construire_pdf(reponse: ReponseHermion, ao: AppelOffre | None) -> FPDF:
     # En-tête : métadonnées AO + version.
     pdf.set_font("Helvetica", "B", 9)
     pdf.set_text_color(120, 120, 120)
-    entete = f"HERMES — Réponse v{reponse.version}"
+    entete = f"HERMES — Response v{reponse.version}"
     if ao is not None:
         if ao.reference_externe:
-            entete += f"  ·  Réf. {ao.reference_externe}"
+            entete += f"  ·  Ref. {ao.reference_externe}"
         if ao.emetteur:
             entete += f"  ·  {ao.emetteur}"
     pdf.multi_cell(0, 5, _net(entete), new_x="LMARGIN", new_y="NEXT")

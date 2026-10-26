@@ -151,7 +151,7 @@ def test_openai_compatible_retire_le_raisonnement(openai):
 
 def test_openai_compatible_reponse_invalide(openai):
     openai.reponse = {"choices": []}
-    with pytest.raises(pythia.ErreurPythia, match="invalide"):
+    with pytest.raises(pythia.ErreurPythia, match="Invalid"):
         asyncio.run(pythia.generer("p"))
 
 

@@ -176,15 +176,15 @@ async def rediger(
 ) -> RedactionResponse:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     statuts_autorises = {StatutAO.A_REPONDRE, StatutAO.EN_REDACTION, StatutAO.ANALYSE}
     if ao.statut not in statuts_autorises:
         raise HTTPException(
             status_code=409,
             detail=(
-                f"Statut AO incompatible ({ao.statut.value}) — passer en "
-                f"'a_repondre' avant de demander une rédaction"
+                f"Incompatible tender status ({ao.statut.value}) — set it to "
+                f"'a_repondre' before requesting a draft"
             ),
         )
 
@@ -229,7 +229,7 @@ def lire_progression(ao_id: int) -> ProgressionRead:
         return ProgressionRead(
             appel_offre_id=ao_id,
             etape="inconnu",
-            libelle="Aucune rédaction en cours",
+            libelle="No draft in progress",
             index=0,
             total=0,
             message="",
@@ -283,7 +283,7 @@ def lister_reponses(
     session: SessionDep,
 ) -> list[ReponseSummary]:
     if session.get(AppelOffre, ao_id) is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
     rows = session.exec(
         select(ReponseHermion)
         .where(ReponseHermion.appel_offre_id == ao_id)
@@ -332,7 +332,7 @@ def lister_toutes_reponses(
 def lire_reponse(reponse_id: int, session: SessionDep) -> ReponseRead:
     reponse = session.get(ReponseHermion, reponse_id)
     if reponse is None:
-        raise HTTPException(status_code=404, detail="Réponse introuvable")
+        raise HTTPException(status_code=404, detail="Response not found")
     return _reponse_read(reponse)
 
 
@@ -344,7 +344,7 @@ def modifier_statut(
 ) -> ReponseRead:
     reponse = session.get(ReponseHermion, reponse_id)
     if reponse is None:
-        raise HTTPException(status_code=404, detail="Réponse introuvable")
+        raise HTTPException(status_code=404, detail="Response not found")
 
     autorises = _TRANSITIONS_AUTORISEES.get(reponse.statut, set())
     if payload.statut not in autorises and payload.statut != reponse.statut:
@@ -352,7 +352,7 @@ def modifier_statut(
             status_code=409,
             detail=(
                 f"Transition '{reponse.statut.value}' → '{payload.statut.value}' "
-                "non autorisée"
+                "not allowed"
             ),
         )
 
@@ -377,7 +377,7 @@ def modifier_statut(
                 agent="HERMION",
                 niveau=NiveauLog.INFO,
                 message=(
-                    f"Réponse {reponse_id} : statut {ancien.value} → "
+                    f"Response {reponse_id}: status {ancien.value} → "
                     f"{payload.statut.value}"
                 ),
                 appel_offre_id=reponse.appel_offre_id,
@@ -397,12 +397,12 @@ def modifier_contenu(
 ) -> ReponseRead:
     reponse = session.get(ReponseHermion, reponse_id)
     if reponse is None:
-        raise HTTPException(status_code=404, detail="Réponse introuvable")
+        raise HTTPException(status_code=404, detail="Response not found")
 
     if reponse.statut in {StatutReponse.EXPORTEE, StatutReponse.REJETEE}:
         raise HTTPException(
             status_code=409,
-            detail=f"Réponse en statut '{reponse.statut.value}' non modifiable",
+            detail=f"Response with status '{reponse.statut.value}' cannot be edited",
         )
 
     ancien = reponse.statut
@@ -426,7 +426,7 @@ def exporter_reponse(reponse_id: int, session: SessionDep) -> ReponseRead:
     """Génère le PDF d'une réponse validée (statut → exportée)."""
     reponse = session.get(ReponseHermion, reponse_id)
     if reponse is None:
-        raise HTTPException(status_code=404, detail="Réponse introuvable")
+        raise HTTPException(status_code=404, detail="Response not found")
     try:
         exporter_reponse_pdf(session, reponse)
     except ErreurExportPdf as exc:
@@ -439,17 +439,17 @@ def telecharger_export(reponse_id: int, session: SessionDep) -> FileResponse:
     """Télécharge le PDF déjà généré pour une réponse."""
     reponse = session.get(ReponseHermion, reponse_id)
     if reponse is None:
-        raise HTTPException(status_code=404, detail="Réponse introuvable")
+        raise HTTPException(status_code=404, detail="Response not found")
     if not reponse.chemin_export:
         raise HTTPException(
-            status_code=404, detail="Réponse non encore exportée en PDF"
+            status_code=404, detail="Response not exported to PDF yet"
         )
 
     chemin = (settings.storage_path / reponse.chemin_export).resolve()
     racine = settings.storage_path.resolve()
     # Garde-fou anti-traversée : le fichier doit rester sous storage/.
     if racine not in chemin.parents or not chemin.is_file():
-        raise HTTPException(status_code=404, detail="Fichier d'export introuvable")
+        raise HTTPException(status_code=404, detail="Export file not found")
 
     return FileResponse(
         path=str(chemin),

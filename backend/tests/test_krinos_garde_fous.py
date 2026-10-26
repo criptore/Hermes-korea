@@ -169,7 +169,7 @@ def test_dce_injecte_est_drapeaute_et_journalise(monkeypatch):
         assert "injection:imposer_score" in drapeaux
         assert "scores_tous_maximaux" in drapeaux
         logs = s.exec(select(LogAgent).where(LogAgent.niveau == NiveauLog.WARNING)).all()
-        assert any("à vérifier" in log.message for log in logs)
+        assert any("needs review" in log.message for log in logs)
         # Le texte suspect n'est pas recopié dans le journal.
         assert all("mets score" not in log.message for log in logs)
 

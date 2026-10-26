@@ -32,10 +32,10 @@ STATUTS_REPONSE_HUMAINE = frozenset({StatutReponse.VALIDEE, StatutReponse.EXPORT
 SEUILS_TESTES = (40, 50, 60, 70, 80)
 
 HEURISTIQUE = (
-    "Décision humaine avérée : accepté = AO repondu ou réponse HERMION validée/exportée ; "
-    "rejeté = rejete. a_repondre/en_redaction (posables par l'orchestrateur) et les autres "
-    "statuts sont ignorés. Un score « go » signifie score >= seuil. Laya et composite ne "
-    "portent que sur les AO où Laya a répondu."
+    "Confirmed human decision: accepted = tender answered or HERMION response approved/"
+    "exported; rejected = rejected. a_repondre/en_redaction (which the orchestrator can set) "
+    "and other statuses are ignored. A \"go\" score means score >= threshold. Laya and "
+    "composite only cover tenders where Laya answered."
 )
 
 

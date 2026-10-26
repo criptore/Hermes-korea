@@ -86,7 +86,7 @@ def _journaliser_demarrage() -> None:
             LogAgent(
                 agent="HERMES",
                 niveau=NiveauLog.INFO,
-                message=f"HERMES démarré (v{__version__}) — BDD : {settings.db_path}",
+                message=f"HERMES started (v{__version__}) — DB: {settings.db_path}",
                 contexte=datetime.now(UTC).isoformat(),
             )
         )
@@ -126,7 +126,7 @@ async def exiger_entete_client(request: Request, call_next):
     if request.method not in _METHODES_SURES and not request.headers.get(ENTETE_CLIENT):
         return JSONResponse(
             status_code=403,
-            content={"detail": f"En-tête {ENTETE_CLIENT} requis (protection CSRF)"},
+            content={"detail": f"Header {ENTETE_CLIENT} required (CSRF protection)"},
         )
     return await call_next(request)
 

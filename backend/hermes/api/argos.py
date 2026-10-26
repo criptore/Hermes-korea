@@ -76,7 +76,7 @@ class CriteresAvancesIO(BaseModel):
         nettoyes = [v.strip().upper() for v in valeurs if v.strip()]
         for v in nettoyes:
             if not departement_valide(v):
-                raise ValueError(f"code département invalide (ex. 75, 2A, 971) : {v!r}")
+                raise ValueError(f"invalid department code (e.g. 75, 2A, 971): {v!r}")
         return nettoyes
 
 
@@ -317,7 +317,7 @@ def initialiser_argos(session: Session = Depends(get_session)) -> Initialisation
     bilan = refiltrer_existants(session, charger_filtre(session))
     scheduler_global.synchroniser_jobs()
     return InitialisationResponse(
-        message="Onboarding finalisé — collectes ARGOS activées.",
+        message="Onboarding complete — ARGOS collections enabled.",
         refiltrage=RefiltrageResume(**bilan.en_dict()),
     )
 
@@ -351,7 +351,7 @@ def etat_scheduler() -> dict:
 
 def _exiger_scheduler_demarre(ok: bool) -> None:
     if not ok:
-        raise HTTPException(status_code=409, detail="Le planificateur ARGOS n'est pas démarré.")
+        raise HTTPException(status_code=409, detail="The ARGOS scheduler is not running.")
 
 
 @router.post("/planificateur/pause")
@@ -431,13 +431,13 @@ def enregistrer_credentials(
     """
     portail = session.exec(select(Portail).where(Portail.nom == nom)).first()
     if portail is None:
-        raise HTTPException(status_code=404, detail="Portail introuvable")
+        raise HTTPException(status_code=404, detail="Portal not found")
 
     portail.credentials_chiffres = chiffrer_credentials(payload.credentials)
     portail.type = TypePortail.PRIVE
     session.add(portail)
     session.commit()
-    return MessageResponse(message="Credentials enregistrés")
+    return MessageResponse(message="Credentials saved")
 
 
 @router.delete("/portails/{nom}/credentials", response_model=MessageResponse)
@@ -448,12 +448,12 @@ def supprimer_credentials(
     """Supprime les credentials chiffrés d'un portail."""
     portail = session.exec(select(Portail).where(Portail.nom == nom)).first()
     if portail is None:
-        raise HTTPException(status_code=404, detail="Portail introuvable")
+        raise HTTPException(status_code=404, detail="Portal not found")
 
     portail.credentials_chiffres = None
     session.add(portail)
     session.commit()
-    return MessageResponse(message="Credentials supprimés")
+    return MessageResponse(message="Credentials deleted")
 
 
 def _portail_read(portail: Portail) -> PortailRead:

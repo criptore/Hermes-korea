@@ -156,7 +156,7 @@ def test_extrait_borne_tete_queue_et_consigne_donnee(monkeypatch):
     verdict = asyncio.run(juge_local.juger("Titre", "Objet", gros))
     assert verdict is not None and verdict.manipulation
     prompt, kw = appels[0]
-    assert "<extrait>" in prompt and "DONNÉE" in kw["system"]
+    assert "<extrait>" in prompt and "DATA" in kw["system"]
     assert kw["format_schema"]["required"] == ["manipulation"]
     assert kw["max_tokens"] <= 300
 

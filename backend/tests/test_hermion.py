@@ -95,8 +95,8 @@ def test_rediger_genere_v1_et_passe_en_redaction(monkeypatch):
         assert reponse.version == 1
         assert reponse.statut == StatutReponse.EN_ATTENTE
         assert reponse.longueur_mots and reponse.longueur_mots > 10
-        assert "# Réponse — Maintenance" in reponse.contenu
-        assert "## Sommaire" in reponse.contenu
+        assert "# Response — Maintenance" in reponse.contenu
+        assert "## Contents" in reponse.contenu
         assert len(resultat.plan) == 3
         workflow = json.loads(reponse.workflow_utilise or "{}")
         assert workflow["nom"] == "plan_puis_sections"
@@ -105,7 +105,7 @@ def test_rediger_genere_v1_et_passe_en_redaction(monkeypatch):
         ao = session.get(AppelOffre, ao_id)
         assert ao.statut == StatutAO.EN_REDACTION
         logs = session.exec(select(LogAgent).where(LogAgent.agent == "HERMION")).all()
-        assert any("réponse v1 générée" in log.message for log in logs)
+        assert any("response v1 generated" in log.message for log in logs)
 
     assert etat["appel"] == 1 + 3  # plan + 3 sections
 

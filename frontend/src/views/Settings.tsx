@@ -32,8 +32,8 @@ import {
 
 const NATURES: { id: NatureMarche; label: string }[] = [
   { id: "services", label: "Services" },
-  { id: "travaux", label: "Travaux" },
-  { id: "fournitures", label: "Fournitures" },
+  { id: "travaux", label: "Works" },
+  { id: "fournitures", label: "Supplies" },
 ];
 
 type Props = {
@@ -52,14 +52,14 @@ type SectionId =
   | "bureau";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "profil",    label: "Profil utilisateur" },
-  { id: "metier",    label: "Profil métier" },
-  { id: "portails",  label: "Portails" },
-  { id: "filtrage",  label: "Critères de filtrage" },
-  { id: "scoring",   label: "Pondération du scoring" },
-  { id: "redaction", label: "Rédaction HERMION" },
-  { id: "pipeline",  label: "Pipeline autonome" },
-  { id: "bureau",    label: "Application de bureau" },
+  { id: "profil",    label: "User profile" },
+  { id: "metier",    label: "Business profile" },
+  { id: "portails",  label: "Portals" },
+  { id: "filtrage",  label: "Filter criteria" },
+  { id: "scoring",   label: "Scoring weights" },
+  { id: "redaction", label: "HERMION drafting" },
+  { id: "pipeline",  label: "Autonomous pipeline" },
+  { id: "bureau",    label: "Desktop app" },
 ];
 
 export function Settings({ profile, onSaveProfile }: Props) {
@@ -127,36 +127,36 @@ function UserProfileSection({
 
   return (
     <div className="settings-section">
-      <h2>Profil utilisateur</h2>
+      <h2>User profile</h2>
       <p className="settings-section__desc">
-        Identité locale et contexte métier injectés dans les prompts KRINOS
-        (scoring) et HERMION (rédaction). Plus les informations sont précises,
-        plus l'IA produit des réponses pertinentes.
+        Local identity and business context injected into the KRINOS (scoring)
+        and HERMION (drafting) prompts. The more precise the information, the
+        more relevant the AI output.
       </p>
 
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Aperçu</div>
-          <div className="settings-row__hint">Topbar et contexte HERMION</div>
+          <div className="settings-row__label">Preview</div>
+          <div className="settings-row__hint">Top bar and HERMION context</div>
         </div>
         <div className="profile-preview">
           <div className="topbar__user-avatar">{getProfileAvatarLetter(preview)}</div>
           <div>
             <div className="profile-preview__name">
-              {canSave ? getProfileDisplayName(preview) : "Utilisateur non configuré"}
+              {canSave ? getProfileDisplayName(preview) : "User not configured"}
             </div>
             <div
               className="profile-preview__context"
               style={{ whiteSpace: "pre-line" }}
             >
-              {canSave ? getHermionUserContext(preview) : "Nom et prénom requis"}
+              {canSave ? getHermionUserContext(preview) : "First and last name required"}
             </div>
           </div>
         </div>
       </div>
 
       <div className="settings-row">
-        <div className="settings-row__label">Prénom *</div>
+        <div className="settings-row__label">First name *</div>
         <input
           className="input"
           value={firstName}
@@ -166,8 +166,8 @@ function UserProfileSection({
 
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Nom *</div>
-          <div className="settings-row__hint">Sa première lettre définit l'avatar</div>
+          <div className="settings-row__label">Last name *</div>
+          <div className="settings-row__hint">Its first letter sets the avatar</div>
         </div>
         <input
           className="input"
@@ -179,7 +179,7 @@ function UserProfileSection({
       <div className="settings-row">
         <div>
           <div className="settings-row__label">Email</div>
-          <div className="settings-row__hint">Optionnel pour les exports et mails</div>
+          <div className="settings-row__hint">Optional, used in exports and emails</div>
         </div>
         <input
           className="input"
@@ -191,35 +191,35 @@ function UserProfileSection({
 
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Entreprise</div>
-          <div className="settings-row__hint">Nom de la structure répondant aux AO</div>
+          <div className="settings-row__label">Company</div>
+          <div className="settings-row__hint">Name of the organisation answering tenders</div>
         </div>
         <input
           className="input"
           value={entreprise}
           onChange={(e) => setEntreprise(e.target.value)}
-          placeholder="ex : ACME Conseil"
+          placeholder="e.g. ACME Consulting"
         />
       </div>
 
       <div className="settings-row">
         <div>
-          <div className="settings-row__label">Activité principale</div>
-          <div className="settings-row__hint">En quelques mots</div>
+          <div className="settings-row__label">Main business activity</div>
+          <div className="settings-row__hint">In a few words</div>
         </div>
         <input
           className="input"
           value={activite}
           onChange={(e) => setActivite(e.target.value)}
-          placeholder="ex : ESN Java/PostgreSQL — AMO secteur public"
+          placeholder="e.g. Java/PostgreSQL IT services firm — public-sector project management"
         />
       </div>
 
       <div className="settings-row" style={{ alignItems: "flex-start" }}>
         <div>
-          <div className="settings-row__label">Informations utiles pour l'IA</div>
+          <div className="settings-row__label">Useful information for the AI</div>
           <div className="settings-row__hint">
-            Références, certifications, taille équipe…
+            References, certifications, team size…
           </div>
         </div>
         <textarea
@@ -227,7 +227,7 @@ function UserProfileSection({
           style={{ minHeight: 100 }}
           value={infosUtiles}
           onChange={(e) => setInfosUtiles(e.target.value)}
-          placeholder="ex : 12 ETP, certifié ISO 27001, références : Naval Group (2024), CDC (2023). Compétences PASSI 4 portées."
+          placeholder="e.g. 12 FTE, ISO 27001 certified, references: Naval Group (2024), CDC (2023). PASSI-qualified auditors."
         />
       </div>
 
@@ -246,7 +246,7 @@ function UserProfileSection({
             })
           }
         >
-          Enregistrer le profil
+          Save profile
         </button>
       </div>
     </div>
@@ -313,15 +313,15 @@ function PortalsSection() {
 
   return (
     <div className="settings-section">
-      <h2>Portails de veille</h2>
+      <h2>Monitored portals</h2>
       <p className="settings-section__desc">
-        ARGOS ne collecte que les portails dont un scraper backend est enregistré.
-        Ajouter une ligne de configuration ne suffit pas : chaque portail privé
-        doit avoir son implémentation dédiée.
+        ARGOS only collects portals that have a registered backend scraper.
+        Adding a configuration row is not enough: each private portal needs its
+        own implementation.
       </p>
 
       {loading ? (
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Chargement…</div>
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 16 }}>
           {scrapers.map((nom) => {
@@ -333,7 +333,7 @@ function PortalsSection() {
                 <div>
                   <div className="portal-row__name">{nom.toUpperCase()}</div>
                   <div className="portal-row__url">
-                    {portail?.url_base ?? SCRAPER_URLS[nom] ?? "URL non configurée"}
+                    {portail?.url_base ?? SCRAPER_URLS[nom] ?? "URL not configured"}
                   </div>
                   {cap && (
                     <div
@@ -344,20 +344,20 @@ function PortalsSection() {
                         marginTop: 6,
                       }}
                     >
-                      {cap.filtrage_serveur && <CapChip label="Filtrage serveur" />}
+                      {cap.filtrage_serveur && <CapChip label="Server-side filtering" />}
                       {cap.pagination && <CapChip label="Pagination" />}
-                      {cap.liens_documents && <CapChip label="Liens documents" />}
-                      <CapChip label={`${cap.champs_filtrables.length} champs filtrables`} />
+                      {cap.liens_documents && <CapChip label="Document links" />}
+                      <CapChip label={`${cap.champs_filtrables.length} filterable fields`} />
                     </div>
                   )}
                 </div>
                 <span className="portal-row__count">
-                  {portail ? (actif ? "Actif" : "Inactif") : "Disponible"}
+                  {portail ? (actif ? "Active" : "Inactive") : "Available"}
                 </span>
                 <span className="portal-row__sync">
                   {portail?.derniere_collecte
-                    ? new Date(portail.derniere_collecte).toLocaleString("fr-FR")
-                    : "Jamais collecté"}
+                    ? new Date(portail.derniere_collecte).toLocaleString("en-GB")
+                    : "Never collected"}
                 </span>
                 <button
                   className={`toggle${actif ? " toggle--on" : ""}`}
@@ -367,8 +367,8 @@ function PortalsSection() {
                   disabled={saving === nom}
                   title={
                     actif
-                      ? "Désactive ce portail dans la configuration ARGOS"
-                      : "Active ce portail dans la configuration ARGOS"
+                      ? "Disable this portal in the ARGOS configuration"
+                      : "Enable this portal in the ARGOS configuration"
                   }
                 >
                   <div className="toggle__thumb" />
@@ -378,7 +378,7 @@ function PortalsSection() {
           })}
           {scrapers.length === 0 && (
             <div style={{ color: "var(--fg-3)", fontSize: 13 }}>
-              Aucun scraper ARGOS enregistré côté backend.
+              No ARGOS scraper registered in the backend.
             </div>
           )}
           {error && (
@@ -393,7 +393,7 @@ function PortalsSection() {
                 color: "var(--fg-2)",
               }}
             >
-              Erreur : {error}
+              Error: {error}
             </div>
           )}
         </div>
@@ -411,13 +411,13 @@ function PortalsSection() {
           lineHeight: 1.5,
         }}
       >
-        Portails privés : le socle Playwright et le stockage chiffré existent,
-        mais chaque portail doit encore être codé puis ajouté au registre ARGOS.
+        Private portals: the Playwright foundation and encrypted storage exist,
+        but each portal still has to be coded and added to the ARGOS registry.
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <button className="btn btn--ghost" disabled title="Nécessite un scraper backend dédié">
-          <Icon.plus size={13} /> Ajouter un portail privé
+        <button className="btn btn--ghost" disabled title="Requires a dedicated backend scraper">
+          <Icon.plus size={13} /> Add a private portal
         </button>
       </div>
     </div>
@@ -568,8 +568,8 @@ function FilteringSection() {
       setActif(reponse.actif);
       setSavedMessage(
         reponse.actif
-          ? "Filtre enregistré — il sera appliqué dès la prochaine collecte ARGOS."
-          : "Filtre vidé — toutes les collectes ARGOS conservent l'intégralité des AO.",
+          ? "Filter saved — it will apply from the next ARGOS collection."
+          : "Filter cleared — ARGOS collections will keep every tender.",
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -582,8 +582,8 @@ function FilteringSection() {
     const profil = loadUserProfile();
     if (!profil || (!profil.entreprise.trim() && !profil.activite.trim())) {
       setError(
-        "Renseigne d'abord le nom de l'entreprise et l'activité dans la section " +
-          "« Profil utilisateur » — l'IA en a besoin pour suggérer des mots-clés.",
+        "First fill in the company name and business activity in the " +
+          "\"User profile\" section — the AI needs them to suggest keywords.",
       );
       return;
     }
@@ -603,8 +603,8 @@ function FilteringSection() {
       setExcluded(suggestion.exclus.join(", "));
       setSuggestionMsg(
         suggestion.raisonnement
-          ? `${suggestion.inclus.length} mots-clés inclus, ${suggestion.exclus.length} exclus proposés. ${suggestion.raisonnement} — vérifie puis enregistre.`
-          : `${suggestion.inclus.length} mots-clés inclus, ${suggestion.exclus.length} exclus proposés — vérifie puis enregistre.`,
+          ? `${suggestion.inclus.length} include and ${suggestion.exclus.length} exclude keywords suggested. ${suggestion.raisonnement} — review, then save.`
+          : `${suggestion.inclus.length} include and ${suggestion.exclus.length} exclude keywords suggested — review, then save.`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -615,29 +615,30 @@ function FilteringSection() {
 
   return (
     <div className="settings-section">
-      <h2>Critères de filtrage</h2>
+      <h2>Filter criteria</h2>
       <p className="settings-section__desc">
-        ARGOS filtre les AO collectés avant insertion dans MNEMOSYNE selon ces
-        mots-clés. Un AO est conservé si au moins un mot-clé inclus apparaît dans
-        son titre, objet ou émetteur, et qu'aucun mot-clé exclus ne s'y trouve.
-        Comparaison insensible à la casse et aux accents.
+        ARGOS filters collected tenders with these keywords before storing them in
+        MNEMOSYNE. A tender is kept if at least one include keyword appears in its
+        title, subject or issuer, and no exclude keyword does. Matching ignores case
+        and accents. Keywords match the tender text, so use the portal's language
+        (French for BOAMP).
       </p>
 
       {loading ? (
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Chargement…</div>
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</div>
       ) : (
         <>
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">Mots-clés inclus</div>
+              <div className="settings-row__label">Include keywords</div>
               <div className="settings-row__hint">
-                Séparés par des virgules. Vide = aucun filtre d'inclusion.
+                Comma-separated. Empty = no include filter.
               </div>
             </div>
             <textarea
               className="response-comment-input"
               style={{ minHeight: 60 }}
-              placeholder="ex : maintenance applicative, java, postgresql, audit"
+              placeholder="e.g. maintenance applicative, java, postgresql, audit"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
             />
@@ -645,15 +646,15 @@ function FilteringSection() {
 
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">Mots-clés exclus</div>
+              <div className="settings-row__label">Exclude keywords</div>
               <div className="settings-row__hint">
-                AO contenant ces termes (titre/objet/émetteur) sont écartés.
+                Tenders containing these terms (title/subject/issuer) are discarded.
               </div>
             </div>
             <textarea
               className="response-comment-input"
               style={{ minHeight: 60 }}
-              placeholder="ex : nettoyage, restauration, espaces verts"
+              placeholder="e.g. nettoyage, restauration, espaces verts"
               value={excluded}
               onChange={(e) => setExcluded(e.target.value)}
             />
@@ -667,18 +668,18 @@ function FilteringSection() {
             }}
           >
             <div className="settings-row__label" style={{ marginBottom: 4 }}>
-              Filtres avancés (serveur)
+              Advanced filters (server-side)
             </div>
             <div className="settings-row__hint" style={{ marginBottom: 14 }}>
-              Poussés directement aux API TED/BOAMP pour cibler la collecte. CPV
-              et pays concernent TED ; descripteurs et départements concernent
-              BOAMP ; nature et dates s'appliquent aux deux.
+              Sent straight to the TED/BOAMP APIs to target collection. CPV and
+              country apply to TED; descriptors and departments apply to BOAMP;
+              contract type and dates apply to both.
             </div>
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Nature du marché</div>
-                <div className="settings-row__hint">Vide = toutes natures</div>
+                <div className="settings-row__label">Contract type</div>
+                <div className="settings-row__hint">Empty = all types</div>
               </div>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                 {NATURES.map((n) => (
@@ -701,12 +702,12 @@ function FilteringSection() {
               <div>
                 <div className="settings-row__label">Codes CPV (TED)</div>
                 <div className="settings-row__hint">
-                  Codes à 8 chiffres, séparés par des virgules. ex : 64200000
+                  8-digit codes, comma-separated. e.g. 64200000
                 </div>
               </div>
               <input
                 className="input"
-                placeholder="ex : 64200000, 72000000"
+                placeholder="e.g. 64200000, 72000000"
                 value={cpv}
                 onChange={(e) => setCpv(e.target.value)}
               />
@@ -714,14 +715,14 @@ function FilteringSection() {
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Pays / zone (TED)</div>
+                <div className="settings-row__label">Country / area (TED)</div>
                 <div className="settings-row__hint">
-                  Codes pays ISO3, séparés par des virgules. Défaut : FRA
+                  ISO3 country codes, comma-separated. Default: FRA
                 </div>
               </div>
               <input
                 className="input"
-                placeholder="ex : FRA, ESP"
+                placeholder="e.g. FRA, ESP"
                 value={pays}
                 onChange={(e) => setPays(e.target.value)}
               />
@@ -729,14 +730,14 @@ function FilteringSection() {
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Descripteurs (BOAMP)</div>
+                <div className="settings-row__label">Descriptors (BOAMP)</div>
                 <div className="settings-row__hint">
-                  Termes métier recherchés dans les descripteurs BOAMP
+                  Business terms searched in BOAMP descriptors
                 </div>
               </div>
               <input
                 className="input"
-                placeholder="ex : informatique, télécommunications"
+                placeholder="e.g. informatique, télécommunications"
                 value={descripteurs}
                 onChange={(e) => setDescripteurs(e.target.value)}
               />
@@ -744,14 +745,14 @@ function FilteringSection() {
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Départements (BOAMP)</div>
+                <div className="settings-row__label">Departments (BOAMP)</div>
                 <div className="settings-row__hint">
-                  Codes département, séparés par des virgules
+                  Department codes, comma-separated
                 </div>
               </div>
               <input
                 className="input"
-                placeholder="ex : 75, 92, 69"
+                placeholder="e.g. 75, 92, 69"
                 value={departements}
                 onChange={(e) => setDepartements(e.target.value)}
               />
@@ -759,9 +760,9 @@ function FilteringSection() {
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Publié depuis</div>
+                <div className="settings-row__label">Published since</div>
                 <div className="settings-row__hint">
-                  N'inclut que les avis publiés à partir de cette date
+                  Only includes notices published from this date
                 </div>
               </div>
               <input
@@ -774,9 +775,9 @@ function FilteringSection() {
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Date limite — entre</div>
+                <div className="settings-row__label">Deadline — between</div>
                 <div className="settings-row__hint">
-                  Fenêtre de date limite de réponse (deadline)
+                  Response deadline window
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -786,7 +787,7 @@ function FilteringSection() {
                   value={deadlineMin}
                   onChange={(e) => setDeadlineMin(e.target.value)}
                 />
-                <span style={{ color: "var(--fg-3)", fontSize: 12 }}>et</span>
+                <span style={{ color: "var(--fg-3)", fontSize: 12 }}>and</span>
                 <input
                   className="input"
                   type="date"
@@ -804,19 +805,19 @@ function FilteringSection() {
               onClick={onSave}
             >
               {saving
-                ? "Enregistrement…"
+                ? "Saving…"
                 : dirty
-                  ? "Enregistrer le filtre"
-                  : "Aucune modification"}
+                  ? "Save filter"
+                  : "No changes"}
             </button>
             <button
               className="btn"
               disabled={suggesting}
               onClick={onSuggest}
-              title="Demande à PYTHIA des mots-clés pertinents selon le profil de ton entreprise"
+              title="Ask PYTHIA for relevant keywords based on your company profile"
             >
               <Icon.refresh size={11} />
-              {suggesting ? "PYTHIA réfléchit…" : "Suggérer (IA)"}
+              {suggesting ? "PYTHIA is thinking…" : "Suggest (AI)"}
             </button>
             {dirty && (
               <span
@@ -826,7 +827,7 @@ function FilteringSection() {
                   fontFamily: "var(--font-mono)",
                 }}
               >
-                ● modifications non enregistrées
+                ● unsaved changes
               </span>
             )}
             <span
@@ -837,7 +838,7 @@ function FilteringSection() {
                 marginLeft: "auto",
               }}
             >
-              {actif ? "● filtre actif" : "○ filtre inactif"}
+              {actif ? "● filter active" : "○ filter inactive"}
             </span>
           </div>
 
@@ -885,7 +886,7 @@ function FilteringSection() {
                 color: "var(--fg-2)",
               }}
             >
-              Erreur : {error}
+              Error: {error}
             </div>
           )}
         </>
@@ -901,28 +902,28 @@ const SCORING_DIMENSIONS: {
 }[] = [
   {
     id: "affinite_metier",
-    label: "Affinité métier",
-    desc: "Correspondance avec l'activité / le savoir-faire de l'entreprise",
+    label: "Business fit",
+    desc: "Match with the company's activity / expertise",
   },
   {
     id: "references",
-    label: "Références",
-    desc: "Capacité à appuyer sur des références similaires passées",
+    label: "References",
+    desc: "Ability to cite similar past references",
   },
   {
     id: "adequation_budget",
-    label: "Adéquation budget",
-    desc: "Taille du marché vs capacité de l'entreprise (ni trop petit ni trop gros)",
+    label: "Budget fit",
+    desc: "Contract size vs company capacity (neither too small nor too large)",
   },
   {
     id: "capacite_equipe",
-    label: "Capacité équipe",
-    desc: "Taille équipe requise / délais vs équipe disponible",
+    label: "Team capacity",
+    desc: "Required team size / timelines vs available team",
   },
   {
     id: "calendrier",
-    label: "Risque calendrier",
-    desc: "Réalisme des délais de réponse et d'exécution",
+    label: "Schedule risk",
+    desc: "Realism of response and delivery timelines",
   },
 ];
 
@@ -995,8 +996,8 @@ function ScoringSection() {
       setSavedValues({ ...v });
       setSavedMsg(
         sauvegarde.total === 100
-          ? "Pondération enregistrée. Elle sera utilisée dès la prochaine analyse KRINOS."
-          : `Pondération enregistrée (total ${sauvegarde.total} % — le score sera normalisé automatiquement).`,
+          ? "Weights saved. They will be used from the next KRINOS analysis."
+          : `Weights saved (total ${sauvegarde.total}% — the score will be normalised automatically).`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1007,15 +1008,15 @@ function ScoringSection() {
 
   return (
     <div className="settings-section">
-      <h2>Pondération du scoring</h2>
+      <h2>Scoring weights</h2>
       <p className="settings-section__desc">
-        KRINOS demande à PYTHIA un score 0-100 pour chacune de ces dimensions
-        puis le backend calcule le score final en somme pondérée. Total cible :
-        100 % (le score est re-normalisé si le total diffère).
+        KRINOS asks PYTHIA for a 0-100 score on each of these dimensions, then the
+        backend computes the final score as a weighted sum. Target total: 100%
+        (the score is re-normalised if the total differs).
       </p>
 
       {loading ? (
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Chargement…</div>
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</div>
       ) : (
         <>
           {SCORING_DIMENSIONS.map((d) => (
@@ -1057,7 +1058,7 @@ function ScoringSection() {
             }}
           >
             <span style={{ fontSize: 12.5 }}>
-              Total :{" "}
+              Total:{" "}
               <strong
                 style={{
                   color: totalOk ? "var(--argos)" : "var(--warn)",
@@ -1068,20 +1069,20 @@ function ScoringSection() {
               </strong>
               {!totalOk && (
                 <span style={{ color: "var(--fg-3)", marginLeft: 8 }}>
-                  — sera re-normalisé à 100 % à l'enregistrement
+                  — will be re-normalised to 100% on save
                 </span>
               )}
             </span>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn--sm" onClick={reset}>
-                Réinitialiser
+                Reset
               </button>
               <button
                 className="btn btn--gold btn--sm"
                 disabled={saving || !dirty}
                 onClick={onSave}
               >
-                {saving ? "Enregistrement…" : dirty ? "Enregistrer" : "Aucune modification"}
+                {saving ? "Saving…" : dirty ? "Save" : "No changes"}
               </button>
             </div>
           </div>
@@ -1113,7 +1114,7 @@ function ScoringSection() {
                 color: "var(--fg-2)",
               }}
             >
-              Erreur : {error}
+              Error: {error}
             </div>
           )}
 
@@ -1125,10 +1126,10 @@ function ScoringSection() {
               lineHeight: 1.6,
             }}
           >
-            Note : les AO déjà analysés gardent leur score d'origine. Pour
-            recalculer un score avec la nouvelle pondération sans relancer
-            PYTHIA, ouvre l'AO dans la Veille puis utilise l'action
-            « Recalculer score » si l'analyse contient les scores par dimension.
+            Note: tenders already analysed keep their original score. To
+            recalculate a score with the new weights without re-running PYTHIA,
+            open the tender in Tenders and use the "Recalculate score" action if
+            the analysis contains per-dimension scores.
           </div>
         </>
       )}
@@ -1183,8 +1184,8 @@ function RedactionSection() {
       setSource(wf.configure ? wf.source : "");
       setSavedMsg(
         wf.configure
-          ? `Workflow enregistré (${wf.sections.length} sections) — HERMION l'utilisera dès la prochaine rédaction.`
-          : "Workflow vidé — HERMION construira un plan dynamique au cas par cas.",
+          ? `Workflow saved (${wf.sections.length} sections) — HERMION will use it from the next draft.`
+          : "Workflow cleared — HERMION will build a dynamic outline for each tender.",
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1195,16 +1196,16 @@ function RedactionSection() {
 
   return (
     <div className="settings-section">
-      <h2>Rédaction HERMION</h2>
+      <h2>HERMION drafting</h2>
       <p className="settings-section__desc">
-        Trame de réponse imposée à HERMION : une liste ordonnée de sections plus
-        des consignes globales. Tu peux la dériver d'une description ou de
-        réponses passées via l'IA, puis la corriger. Sans workflow, HERMION
-        construit un plan dynamique pour chaque AO.
+        Response outline imposed on HERMION: an ordered list of sections plus
+        global instructions. You can derive it with AI from a description or past
+        responses, then correct it. Without a workflow, HERMION builds a dynamic
+        outline for each tender.
       </p>
 
       {loading ? (
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Chargement…</div>
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</div>
       ) : (
         <>
           {source && (
@@ -1216,7 +1217,7 @@ function RedactionSection() {
                 fontFamily: "var(--font-mono)",
               }}
             >
-              ● workflow actif — origine : {source}
+              ● workflow active — source: {source}
             </div>
           )}
 
@@ -1224,10 +1225,10 @@ function RedactionSection() {
 
           <div style={{ marginTop: 18, display: "flex", gap: 12, alignItems: "center" }}>
             <button className="btn btn--gold" disabled={saving} onClick={onSave}>
-              {saving ? "Enregistrement…" : "Enregistrer le workflow"}
+              {saving ? "Saving…" : "Save workflow"}
             </button>
             <span style={{ fontSize: 11.5, color: "var(--fg-4)" }}>
-              Enregistrer avec zéro section désactive le workflow.
+              Saving with zero sections disables the workflow.
             </span>
           </div>
 
@@ -1258,7 +1259,7 @@ function RedactionSection() {
                 color: "var(--fg-2)",
               }}
             >
-              Erreur : {error}
+              Error: {error}
             </div>
           )}
         </>
@@ -1275,9 +1276,9 @@ const CFG_DEFAUT: ConfigOrchestration = {
 };
 
 const GO = 1024 * 1024 * 1024;
-const formatGo = (octets: number) => `${(octets / GO).toFixed(2)} Go`;
+const formatGo = (octets: number) => `${(octets / GO).toFixed(2)} GB`;
 const formatTaille = (octets: number) =>
-  octets >= GO ? formatGo(octets) : octets >= 1024 * 1024 ? `${(octets / (1024 * 1024)).toFixed(1)} Mo` : `${Math.ceil(octets / 1024)} Ko`;
+  octets >= GO ? formatGo(octets) : octets >= 1024 * 1024 ? `${(octets / (1024 * 1024)).toFixed(1)} MB` : `${Math.ceil(octets / 1024)} KB`;
 
 /**
  * Juge Laya (local, ONNX) : état du modèle, téléchargement consenti avec progression,
@@ -1353,39 +1354,39 @@ function LayaReglage() {
       .map((f) => `  - ${f.chemin} (${formatTaille(f.taille_octets)})`)
       .join("\n");
     const intro = aReinstaller
-      ? `Réinstaller le modèle Laya (${modele.precision}) : ${modele.fichiers_concernes.length} ` +
-        `fichier(s) à retélécharger, ${formatTaille(modele.taille_a_telecharger_octets)} au total :\n` +
-        `${liste}\n\nSeuls ces fichiers sont retéléchargés. `
-      : `Télécharger le modèle Laya (${modele.precision}) : ${modele.fichiers_concernes.length} ` +
-        `fichier(s), ${formatTaille(modele.taille_a_telecharger_octets)} au total :\n${liste}\n\n`;
+      ? `Reinstall the Laya model (${modele.precision}): ${modele.fichiers_concernes.length} ` +
+        `file(s) to download again, ${formatTaille(modele.taille_a_telecharger_octets)} in total:\n` +
+        `${liste}\n\nOnly these files are downloaded again. `
+      : `Download the Laya model (${modele.precision}): ${modele.fichiers_concernes.length} ` +
+        `file(s), ${formatTaille(modele.taille_a_telecharger_octets)} in total:\n${liste}\n\n`;
     const ok = window.confirm(
       intro +
-        "Source : Hugging Face (dépôt onnx-community/laya-multilingual-ONNX, version épinglée, " +
-        "empreintes SHA-256 vérifiées). C'est le seul appel externe de Laya : ensuite " +
-        `il tourne entièrement sur cette machine. Espace libre : ${formatGo(modele.espace_disque_libre_octets)}.`,
+        "Source: Hugging Face (onnx-community/laya-multilingual-ONNX repository, pinned version, " +
+        "SHA-256 checksums verified). This is Laya's only external call: afterwards " +
+        `it runs entirely on this machine. Free space: ${formatGo(modele.espace_disque_libre_octets)}.`,
     );
     if (ok) void agir(() => api.telechargerModeleLaya(modele.precision));
   };
 
   return (
-    <section className="settings-carte" aria-label="Juge Laya">
+    <section className="settings-carte" aria-label="Laya judge">
       <div className="settings-carte__tete">
         <div>
-          <div className="settings-row__label">Juge Laya (local) — optionnel</div>
+          <div className="settings-row__label">Laya judge (local) — optional</div>
           <div className="settings-row__hint">
-            Second avis sur le score KRINOS, calculé sur cette machine : aucune clé, aucun budget,
-            rien ne sort de l'ordinateur. Un écart avec PYTHIA, une faible confiance ou une
-            manipulation placent l'AO « à vérifier ».
+            Second opinion on the KRINOS score, computed on this machine: no key, no budget,
+            nothing leaves the computer. A gap with PYTHIA, low confidence or a manipulation
+            attempt flags the tender as "needs review".
             {erreur ? ` ${erreur}` : ""}
           </div>
           <details className="settings-carte__details">
-            <summary>En savoir plus</summary>
+            <summary>Learn more</summary>
             <div className="settings-row__hint">
-              Modèle open source Laya (Convai Innovations, Apache 2.0), exécuté par ONNX Runtime
-              dans le backend HERMES. Il juge tous les portails, publics ou privés. Ses fichiers
-              sont vérifiés par SHA-256 au démarrage de HERMES (si Laya est activé, en tâche de fond), à la
-              demande (« Vérifier l'intégrité ») et au premier chargement ; en cas d'écart, le modèle est
-              refusé et doit être réinstallé, avec votre accord.
+              Open-source Laya model (Convai Innovations, Apache 2.0), run by ONNX Runtime inside
+              the HERMES backend. It judges every portal, public or private. Its files are checked
+              with SHA-256 when HERMES starts (in the background, if Laya is enabled), on demand
+              ("Verify integrity") and on first load; on any mismatch the model is refused and must
+              be reinstalled, with your consent.
             </div>
           </details>
         </div>
@@ -1395,30 +1396,30 @@ function LayaReglage() {
           disabled={busy || (!installe && !cfg.actif)}
           role="switch"
           aria-checked={cfg.actif}
-          title={installe ? undefined : "Installez d'abord le modèle"}
+          title={installe ? undefined : "Install the model first"}
         >
           <div className="toggle__thumb" />
         </button>
       </div>
 
       <div className="settings-row__hint">
-        <strong>Modèle :</strong>{" "}
+        <strong>Model:</strong>{" "}
         {installe
-          ? `installé (${modele.precision}, ${formatGo(modele.taille_octets)}) — ${modele.dossier}`
+          ? `installed (${modele.precision}, ${formatGo(modele.taille_octets)}) — ${modele.dossier}`
           : aReinstaller
-            ? `à réinstaller (${modele.precision}) — ${formatTaille(modele.taille_a_telecharger_octets)} à télécharger`
-            : `non installé — ${formatGo(modele.taille_octets)} à télécharger (${modele.precision})`}
-        {cfg.actif && !cfg.operationnel && aReinstaller && " — activé, mais bloqué : modèle à réinstaller."}
-        {cfg.actif && !cfg.operationnel && !aReinstaller && " — activé mais inutilisable tant que le modèle manque."}
-        {cfg.operationnel && " — opérationnel."}
+            ? `needs reinstalling (${modele.precision}) — ${formatTaille(modele.taille_a_telecharger_octets)} to download`
+            : `not installed — ${formatGo(modele.taille_octets)} to download (${modele.precision})`}
+        {cfg.actif && !cfg.operationnel && aReinstaller && " — enabled, but blocked: the model must be reinstalled."}
+        {cfg.actif && !cfg.operationnel && !aReinstaller && " — enabled, but unusable while the model is missing."}
+        {cfg.operationnel && " — operational."}
       </div>
 
       {aReinstaller && (
         <div className="settings-carte__alerte" role="alert">
-          Intégrité non vérifiée : {modele.a_reinstaller.join(", ")} ne correspond plus à
-          l'empreinte SHA-256 attendue.{" "}
-          {cfg.actif ? "Laya est activé, mais bloqué" : "Laya reste désactivé"} tant que le
-          modèle n'est pas réinstallé ; rien n'est retéléchargé sans votre accord.
+          Integrity check failed: {modele.a_reinstaller.join(", ")} no longer matches the
+          expected SHA-256 checksum.{" "}
+          {cfg.actif ? "Laya is enabled, but blocked" : "Laya stays disabled"} until the model
+          is reinstalled; nothing is downloaded again without your consent.
         </div>
       )}
 
@@ -1429,12 +1430,12 @@ function LayaReglage() {
             disabled={busy}
             onClick={() => void agir(() => api.verifierIntegriteLaya())}
           >
-            Vérifier l'intégrité
+            Verify integrity
           </button>
           <span className="settings-row__hint">
             {modele.verifie_le
-              ? `Dernière vérification : ${new Date(modele.verifie_le).toLocaleString("fr-FR")}`
-              : "Pas encore vérifié depuis le démarrage."}
+              ? `Last checked: ${new Date(modele.verifie_le).toLocaleString("en-GB")}`
+              : "Not checked since startup."}
           </span>
         </div>
       )}
@@ -1442,7 +1443,7 @@ function LayaReglage() {
       {!installe && !prog.en_cours && (
         <div className="settings-carte__actions">
           <label className="settings-row__hint">
-            Précision{" "}
+            Precision{" "}
             <select
               className="input"
               value={cfg.precision}
@@ -1451,12 +1452,12 @@ function LayaReglage() {
                 void agir(() => api.ecrireConfigLaya({ precision: e.target.value as PrecisionLaya }))
               }
             >
-              <option value="fp16">fp16 (~0,7 Go, recommandé)</option>
-              <option value="fp32">fp32 (~1,3 Go)</option>
+              <option value="fp16">fp16 (~0.7 GB, recommended)</option>
+              <option value="fp32">fp32 (~1.3 GB)</option>
             </select>
           </label>
           <button className="btn btn--gold" disabled={busy} onClick={telecharger}>
-            {aReinstaller ? "Réinstaller le modèle" : "Télécharger le modèle"}
+            {aReinstaller ? "Reinstall model" : "Download model"}
           </button>
         </div>
       )}
@@ -1497,18 +1498,18 @@ function LayaReglage() {
             style={{ marginTop: 6 }}
             onClick={() => void agir(() => api.annulerTelechargementLaya())}
           >
-            Annuler le téléchargement
+            Cancel download
           </button>
         </div>
       )}
       {prog.erreur && !prog.en_cours && (
         <div className="settings-row__hint" style={{ color: "var(--err)" }}>
-          Téléchargement échoué : {prog.erreur}
+          Download failed: {prog.erreur}
         </div>
       )}
 
       <label className="settings-row__hint">
-        Température de calibration : {temperature.toFixed(1)}{" "}
+        Calibration temperature: {temperature.toFixed(1)}{" "}
         <input
           type="range"
           min={0.5}
@@ -1521,8 +1522,8 @@ function LayaReglage() {
           onKeyUp={() => void agir(() => api.ecrireConfigLaya({ temperature }))}
         />
         <span style={{ display: "block" }}>
-          Au-dessus de 1, les probabilités sont aplaties (la confiance baisse, plus d'AO passent
-          « à vérifier »). 1 = sorties brutes.
+          Above 1, probabilities are flattened (confidence drops, more tenders become
+          "needs review"). 1 = raw outputs.
         </span>
       </label>
     </section>
@@ -1565,19 +1566,19 @@ function JugeLocalReglage() {
   };
 
   return (
-    <section className="settings-carte settings-carte--ligne" aria-label="Juge local PYTHIA">
+    <section className="settings-carte settings-carte--ligne" aria-label="PYTHIA local judge">
       <div>
-        <div className="settings-row__label">Juge local anti-manipulation (PYTHIA)</div>
+        <div className="settings-row__label">Local anti-manipulation judge (PYTHIA)</div>
         <div className="settings-row__hint">
-          Un appel PYTHIA court vérifie que le dossier ne cherche pas à manipuler l'évaluation
-          automatique. Hors ligne ; une détection place l'AO « à vérifier ».
+          A short PYTHIA call checks that the tender file does not try to manipulate the
+          automatic evaluation. Offline; a detection flags the tender as "needs review".
           {erreur ? ` ${erreur}` : ""}
         </div>
         <details className="settings-carte__details">
-          <summary>En savoir plus</summary>
+          <summary>Learn more</summary>
           <div className="settings-row__hint">
-            Il repère les reformulations que les motifs locaux ne voient pas. Il fonctionne sur
-            tous les portails et n'envoie rien hors de la machine.
+            It catches rephrasings the local patterns miss. It works on every portal and sends
+            nothing off the machine.
           </div>
         </details>
       </div>
@@ -1633,23 +1634,23 @@ function LayaPretriReglage() {
   };
 
   return (
-    <section className="settings-carte settings-carte--ligne" aria-label="Pré-tri Laya">
+    <section className="settings-carte settings-carte--ligne" aria-label="Laya pre-screening">
       <div>
-        <div className="settings-row__label">Pré-tri de pertinence Laya — optionnel</div>
+        <div className="settings-row__label">Laya relevance pre-screening — optional</div>
         <div className="settings-row__hint">
-          Avant KRINOS, Laya juge la pertinence de chaque AO pour votre profil ; sous le seuil,
-          l'AO est marqué « hors profil (Laya) » et n'est pas analysé par PYTHIA.
+          Before KRINOS, Laya judges how relevant each tender is to your profile; below the
+          threshold, the tender is marked "off-profile (Laya)" and PYTHIA does not analyse it.
           {erreur ? ` ${erreur}` : ""}
         </div>
         <details className="settings-carte__details">
-          <summary>En savoir plus</summary>
+          <summary>Learn more</summary>
           <div className="settings-row__hint">
-            L'AO reste visible et vous pouvez forcer l'analyse. Panne ou modèle absent : analyse
-            normale. Nécessite que Laya soit activé et installé.
+            The tender stays visible and you can force the analysis. On failure or missing model:
+            normal analysis. Requires Laya to be enabled and installed.
           </div>
         </details>
         <label className="settings-row__hint">
-          Seuil de pertinence : {seuil} %{" "}
+          Relevance threshold: {seuil}%{" "}
           <input
             type="range"
             min={0}
@@ -1677,20 +1678,20 @@ function LayaPretriReglage() {
 }
 
 const CHAMPS_SEUILS: { id: keyof SeuilsLaya; label: string; max: number; pas: number }[] = [
-  { id: "divergence", label: "Divergence Laya/PYTHIA (points)", max: 100, pas: 1 },
-  { id: "manipulation", label: "Manipulation (probabilité)", max: 1, pas: 0.05 },
-  { id: "pertinence", label: "Pertinence minimale (probabilité)", max: 1, pas: 0.05 },
-  { id: "confiance", label: "Confiance minimale de Laya", max: 1, pas: 0.05 },
+  { id: "divergence", label: "Laya/PYTHIA divergence (points)", max: 100, pas: 1 },
+  { id: "manipulation", label: "Manipulation (probability)", max: 1, pas: 0.05 },
+  { id: "pertinence", label: "Minimum relevance (probability)", max: 1, pas: 0.05 },
+  { id: "confiance", label: "Minimum Laya confidence", max: 1, pas: 0.05 },
 ];
 
 const CHAMPS_COMPOSITE: { id: keyof ConfigComposite; label: string }[] = [
-  { id: "poids_pythia", label: "Poids PYTHIA" },
-  { id: "poids_laya", label: "Poids Laya" },
-  { id: "poids_pertinence", label: "Poids pertinence Laya" },
-  { id: "seuil_go", label: "Seuil « go » du composite" },
+  { id: "poids_pythia", label: "PYTHIA weight" },
+  { id: "poids_laya", label: "Laya weight" },
+  { id: "poids_pertinence", label: "Laya relevance weight" },
+  { id: "seuil_go", label: "Composite \"go\" threshold" },
 ];
 
-const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)} %`);
+const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v * 100)}%`);
 
 /** Seuils de routage Laya, pondérations du composite go/no-go et calibration (lecture seule). */
 function LayaSeuilsEtCalibration() {
@@ -1720,7 +1721,7 @@ function LayaSeuilsEtCalibration() {
       setSeuils(await api.ecrireSeuilsLaya(seuils));
       setComposite(await api.ecrireComposite(composite));
       setCalibration(await api.lireCalibration());
-      setMessage("Réglages enregistrés (appliqués aux prochaines analyses et au recalcul).");
+      setMessage("Settings saved (applied to the next analyses and recalculations).");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : String(e));
     } finally {
@@ -1730,11 +1731,11 @@ function LayaSeuilsEtCalibration() {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div className="settings-row__label">Laya : seuils de routage et score composite</div>
+      <div className="settings-row__label">Laya: routing thresholds and composite score</div>
       <div className="settings-row__hint">
-        Sous ces seuils, l'AO passe « à vérifier » (décision humaine, jamais de promotion
-        automatique). Le composite (PYTHIA + Laya + pertinence) est indicatif et recalculé sans
-        nouvelle inférence de Laya.
+        Past these thresholds, the tender is flagged "needs review" (human decision, never
+        automatic promotion). The composite (PYTHIA + Laya + relevance) is indicative and is
+        recalculated without a new Laya inference.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
         {CHAMPS_SEUILS.map((c) => (
@@ -1768,25 +1769,25 @@ function LayaSeuilsEtCalibration() {
       </div>
       <div style={{ marginTop: 8, display: "flex", gap: 12, alignItems: "center" }}>
         <button className="btn btn--gold" disabled={busy} onClick={enregistrer}>
-          Enregistrer
+          Save
         </button>
         {message && <span className="settings-row__hint">{message}</span>}
       </div>
 
       {calibration && (
         <div className="settings-row__hint" style={{ marginTop: 12 }}>
-          <strong>Calibration (lecture seule)</strong> — {calibration.echantillon.total} AO
-          décidés ({calibration.echantillon.acceptes} acceptés, {calibration.echantillon.rejetes}{" "}
-          rejetés, {calibration.echantillon.avec_laya} avec avis Laya). Écart moyen Laya/PYTHIA :{" "}
+          <strong>Calibration (read-only)</strong> — {calibration.echantillon.total} tenders
+          decided ({calibration.echantillon.acceptes} accepted, {calibration.echantillon.rejetes}{" "}
+          rejected, {calibration.echantillon.avec_laya} with a Laya opinion). Mean Laya/PYTHIA gap:{" "}
           {calibration.ecart_moyen_laya_pythia ?? "—"} pts.
           <ul style={{ margin: "4px 0 0 16px" }}>
             {(["pythia", "laya", "composite"] as const).map((k) => (
               <li key={k}>
-                {k === "pythia" ? "PYTHIA" : k === "laya" ? "Laya" : "Composite"} : accord{" "}
-                {pct(calibration.sources[k].taux_accord)} au seuil {calibration.seuil_go} (n=
+                {k === "pythia" ? "PYTHIA" : k === "laya" ? "Laya" : "Composite"}: agreement{" "}
+                {pct(calibration.sources[k].taux_accord)} at threshold {calibration.seuil_go} (n=
                 {calibration.sources[k].n})
                 {calibration.sources[k].n > 0 &&
-                  " ; par seuil : " +
+                  "; by threshold: " +
                     calibration.sources[k].matrice
                       .map((m) => `${m.seuil}→${pct(m.taux_accord)}`)
                       .join(", ")}
@@ -1842,8 +1843,8 @@ function OrchestrationSection() {
       setSaved(c);
       setSavedMsg(
         c.actif
-          ? "Configuration enregistrée — le pipeline tournera après chaque cycle ARGOS."
-          : "Pipeline désactivé — aucune analyse/rédaction automatique.",
+          ? "Configuration saved — the pipeline will run after each ARGOS cycle."
+          : "Pipeline disabled — no automatic analysis/drafting.",
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1867,23 +1868,23 @@ function OrchestrationSection() {
 
   return (
     <div className="settings-section">
-      <h2>Pipeline autonome</h2>
+      <h2>Autonomous pipeline</h2>
       <p className="settings-section__desc">
-        Sans intervention humaine, après chaque collecte ARGOS : analyse KRINOS
-        (score, tags, résumé) puis, pour les AO au-dessus du seuil, mise en
-        rédaction HERMION. La réponse s'arrête en « en attente » — la
-        validation finale reste exclusivement humaine.
+        Without human intervention, after each ARGOS collection: KRINOS analysis
+        (score, tags, summary), then HERMION drafting for tenders above the
+        threshold. The response stops at "pending" — final approval stays
+        exclusively human.
       </p>
 
       {loading ? (
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Chargement…</div>
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</div>
       ) : (
         <>
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">Pipeline activé</div>
+              <div className="settings-row__label">Pipeline enabled</div>
               <div className="settings-row__hint">
-                Interrupteur maître de l'autonomie
+                Master switch for autonomy
               </div>
             </div>
             <button
@@ -1898,9 +1899,9 @@ function OrchestrationSection() {
 
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">Seuil de mise en rédaction</div>
+              <div className="settings-row__label">Drafting threshold</div>
               <div className="settings-row__hint">
-                Score KRINOS minimal pour passer un AO à HERMION
+                Minimum KRINOS score to hand a tender to HERMION
               </div>
             </div>
             <div className="slider-row">
@@ -1920,9 +1921,9 @@ function OrchestrationSection() {
 
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">Rédaction automatique</div>
+              <div className="settings-row__label">Automatic drafting</div>
               <div className="settings-row__hint">
-                Si désactivé : KRINOS analyse, mais HERMION ne rédige pas seul
+                If disabled: KRINOS analyses, but HERMION does not draft on its own
               </div>
             </div>
             <button
@@ -1939,9 +1940,9 @@ function OrchestrationSection() {
 
           <div className="settings-row">
             <div>
-              <div className="settings-row__label">AO max par cycle</div>
+              <div className="settings-row__label">Max tenders per cycle</div>
               <div className="settings-row__hint">
-                Plafonne la charge PYTHIA à chaque passage (1-50)
+                Caps the PYTHIA load on each run (1-50)
               </div>
             </div>
             <input
@@ -1969,13 +1970,13 @@ function OrchestrationSection() {
               onClick={onSave}
             >
               {saving
-                ? "Enregistrement…"
+                ? "Saving…"
                 : dirty
-                  ? "Enregistrer"
-                  : "Aucune modification"}
+                  ? "Save"
+                  : "No changes"}
             </button>
             <button className="btn" disabled={running} onClick={onRun}>
-              {running ? "Pipeline en cours…" : "Lancer le pipeline maintenant"}
+              {running ? "Pipeline running…" : "Run the pipeline now"}
             </button>
           </div>
 
@@ -1993,8 +1994,8 @@ function OrchestrationSection() {
               }}
             >
               {rapport.actif
-                ? `${rapport.ao_analyses} analysés, ${rapport.ao_rediges} mis en rédaction, ${rapport.ao_sous_seuil} sous le seuil, ${rapport.ao_a_verifier ?? 0} à vérifier (drapeaux KRINOS), ${rapport.ao_echecs} échecs.`
-                : "Pipeline désactivé — rien n'a été traité."}
+                ? `${rapport.ao_analyses} analysed, ${rapport.ao_rediges} sent to drafting, ${rapport.ao_sous_seuil} below threshold, ${rapport.ao_a_verifier ?? 0} need review (KRINOS flags), ${rapport.ao_echecs} failures.`
+                : "Pipeline disabled — nothing was processed."}
             </div>
           )}
           {savedMsg && (
@@ -2024,7 +2025,7 @@ function OrchestrationSection() {
                 color: "var(--fg-2)",
               }}
             >
-              Erreur : {error}
+              Error: {error}
             </div>
           )}
         </>
@@ -2034,13 +2035,13 @@ function OrchestrationSection() {
 }
 
 const REGLAGES_BUREAU: { cle: keyof PreferencesBureau; label: string; hint: string }[] = [
-  { cle: "nouvelAo", label: "Nouvel AO pertinent", hint: "Score KRINOS au-dessus du seuil du pipeline" },
-  { cle: "reponsePrete", label: "Réponse HERMION prête", hint: "Une réponse attend votre validation" },
-  { cle: "panneArgos", label: "Panne ARGOS", hint: "Une collecte a échoué" },
+  { cle: "nouvelAo", label: "New relevant tender", hint: "KRINOS score above the pipeline threshold" },
+  { cle: "reponsePrete", label: "HERMION response ready", hint: "A response is awaiting your approval" },
+  { cle: "panneArgos", label: "ARGOS failure", hint: "A collection run failed" },
   {
     cle: "reduireDansTray",
-    label: "Fermer la fenêtre réduit dans la zone de notification",
-    hint: "HERMES continue de veiller ; « Quitter » (menu de l'icône) arrête tout",
+    label: "Closing the window keeps HERMES in the menu bar / system tray",
+    hint: "HERMES keeps watching; \"Quit\" (icon menu) stops everything",
   },
 ];
 
@@ -2056,10 +2057,10 @@ function BureauSection() {
 
   return (
     <div className="settings-section">
-      <h2>Application de bureau</h2>
+      <h2>Desktop app</h2>
       <p className="settings-section__desc">
-        Notifications système et zone de notification. Tout reste local à cette machine.
-        {!bureau && " Ces réglages ne s'appliquent que dans l'application de bureau HERMES."}
+        System notifications and menu bar / system tray icon. Everything stays local to this machine.
+        {!bureau && " These settings only apply in the HERMES desktop app."}
       </p>
       {REGLAGES_BUREAU.map((r) => (
         <div className="settings-row" key={r.cle}>

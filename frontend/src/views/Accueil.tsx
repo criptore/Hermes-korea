@@ -30,20 +30,20 @@ type PipelineSeg = { key: string; label: string; n: number; color: string };
 
 // Étapes du pipeline = statuts StatutAO « vivants », dans l'ordre du flux.
 const ETAPES_PIPELINE: { key: string; label: string; color: string }[] = [
-  { key: "brut",         label: "Collectés",    color: "#7A8190" },
-  { key: "analyse",      label: "Analysés",     color: "#C8A951" },
-  { key: "a_repondre",   label: "À répondre",   color: "#7F77DD" },
-  { key: "en_redaction", label: "En rédaction", color: "#D85A30" },
-  { key: "repondu",      label: "Répondus",     color: "#1D9E75" },
+  { key: "brut",         label: "Collected",    color: "#7A8190" },
+  { key: "analyse",      label: "Analysed",     color: "#C8A951" },
+  { key: "a_repondre",   label: "To answer",    color: "#7F77DD" },
+  { key: "en_redaction", label: "Drafting",     color: "#D85A30" },
+  { key: "repondu",      label: "Answered",     color: "#1D9E75" },
 ];
 
 const heure = (iso: string): string => {
   const d = new Date(iso);
   const memeJour = d.toDateString() === new Date().toDateString();
-  const hm = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const hm = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   return memeJour
     ? hm
-    : `${d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} ${hm}`;
+    : `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" })} ${hm}`;
 };
 
 const agentDe = (ligne: ActiviteAgent): AgentKey => ligne.agent.toLowerCase() as AgentKey;
@@ -75,7 +75,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
           <span className="loading-banner__icon" />
           <span>
             <strong style={{ color: "var(--argos)", letterSpacing: "0.08em" }}>ARGOS</strong>{" "}
-            collecte les nouveaux appels d'offre…
+            is collecting new tenders…
           </span>
           <div className="loading-banner__bar" />
           <span
@@ -85,7 +85,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
               fontSize: 11,
             }}
           >
-            scrapers ARGOS
+            ARGOS scrapers
           </span>
         </div>
       )}
@@ -93,7 +93,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
       <div className="view__scroll">
         {error && !data && (
           <div className="loading-banner" role="alert">
-            <span>Impossible de lire MNEMOSYNE : {error}</span>
+            <span>Cannot read MNEMOSYNE: {error}</span>
           </div>
         )}
         <motion.div
@@ -105,31 +105,31 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
           {/* KPI tiles */}
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-3">
             <div className="tile__label">
-              AO détectés
+              Tenders detected
             </div>
             <div className="tile__value"><Compteur valeur={counts.total} /></div>
-            <div className="tile__sub">{counts.urgent} urgents (J−7)</div>
+            <div className="tile__sub">{counts.urgent} urgent (D−7)</div>
             <Barre />
           </motion.div>
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-3">
             <div className="tile__label">Score ≥ 70</div>
             <div className="tile__value" style={{ color: "var(--argos)" }}><Compteur valeur={counts.high} /></div>
-            <div className="tile__sub">Pertinence haute selon KRINOS</div>
+            <div className="tile__sub">High relevance according to KRINOS</div>
 <Barre fond="linear-gradient(90deg, var(--argos), transparent)" />
           </motion.div>
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-3">
-            <div className="tile__label">À répondre</div>
+            <div className="tile__label">To answer</div>
             <div className="tile__value" style={{ color: "var(--krinos)" }}><Compteur valeur={counts.toAnswer} /></div>
-            <div className="tile__sub">Marqués par l'opérateur</div>
+            <div className="tile__sub">Flagged by the operator</div>
 <Barre fond="linear-gradient(90deg, var(--krinos), transparent)" />
           </motion.div>
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-3">
-            <div className="tile__label">Réponses en validation</div>
+            <div className="tile__label">Responses awaiting approval</div>
             <div className="tile__value" style={{ color: "var(--warn)" }}>
               <Compteur valeur={enValidation} />
             </div>
             <div className="tile__sub">
-              {reponses["validee"] ?? 0} validées · {reponses["exportee"] ?? 0} exportées
+              {reponses["validee"] ?? 0} approved · {reponses["exportee"] ?? 0} exported
             </div>
 <Barre fond="linear-gradient(90deg, var(--hermion), transparent)" />
           </motion.div>
@@ -137,9 +137,9 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
           {/* Pipeline */}
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-8">
             <div className="tile__label">
-              <span>Pipeline des appels d'offre</span>
+              <span>Tender pipeline</span>
               <button className="btn btn--ghost btn--sm" onClick={onTriggerCycle}>
-                <Icon.refresh size={11} /> Forcer un cycle
+                <Icon.refresh size={11} /> Force a cycle
               </button>
             </div>
             <div className="pipeline">
@@ -161,7 +161,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
                   }}
                 >
                   <span>
-                    <Compteur valeur={p.n} formater={(n) => n.toLocaleString("fr-FR")} />
+                    <Compteur valeur={p.n} formater={(n) => n.toLocaleString("en-GB")} />
                   </span>
                 </motion.div>
               ))}
@@ -178,16 +178,16 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
 
           {/* Quick actions */}
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-4">
-            <div className="tile__label">Actions rapides</div>
+            <div className="tile__label">Quick actions</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
               <button className="btn btn--gold" onClick={() => onNavigate("tenders")}>
-                <Icon.document size={13} /> Voir les appels d'offre
+                <Icon.document size={13} /> View tenders
               </button>
               <button className="btn" onClick={() => onNavigate("responses")}>
-                <Icon.reply size={13} /> File de validation
+                <Icon.reply size={13} /> Approval queue
               </button>
               <button className="btn btn--ghost" onClick={() => onNavigate("settings")}>
-                <Icon.settings size={13} /> Configurer les portails
+                <Icon.settings size={13} /> Configure portals
               </button>
             </div>
           </motion.div>
@@ -195,7 +195,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
           {/* Activity feed */}
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-8">
             <div className="tile__label">
-              <span>Activité des agents</span>
+              <span>Agent activity</span>
               <span
                 style={{
                   fontFamily: "var(--font-mono)",
@@ -205,7 +205,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
                   letterSpacing: 0,
                 }}
               >
-                {new Date().toLocaleDateString("fr-FR", {
+                {new Date().toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -215,7 +215,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
             <div style={{ marginTop: 6 }}>
               {activite.length === 0 && (
                 <div style={{ padding: "14px 0", fontSize: 12, color: "var(--fg-3)" }}>
-                  Aucune activité d'agent enregistrée pour le moment.
+                  No agent activity recorded yet.
                 </div>
               )}
               {activite.map((row, i) => {
@@ -250,7 +250,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
 
           {/* Status of agents */}
           <motion.div variants={VARIANTES_ELEMENT} className="tile col-4">
-            <div className="tile__label">État des agents</div>
+            <div className="tile__label">Agent status</div>
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
               {(Object.entries(AGENTS) as [AgentKey, (typeof AGENTS)[AgentKey]][]).map(
                 ([key, a]) => {
@@ -262,7 +262,7 @@ export function Accueil({ onNavigate, agents, isLoading, onTriggerCycle, refresh
                         ? "var(--warn)"
                         : "var(--fg-4)";
                   const stateLabel =
-                    state === "active" ? "Actif" : state === "running" ? "En cours" : "Inactif";
+                    state === "active" ? "Active" : state === "running" ? "Running" : "Idle";
                   return (
                     <div
                       key={key}

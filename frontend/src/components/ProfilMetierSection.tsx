@@ -66,7 +66,7 @@ export function ProfilMetierSection({ legacy }: { legacy: UserProfile | null }) 
         // Migration douce : profil backend vide -> reprend l'activité du profil local.
         if (estVide(profil) && legacy?.activite.trim()) {
           profil = await api.ecrireProfilMetier({ ...VIDE, activite: legacy.activite.trim() });
-          if (!annule) setMsg("Activité reprise depuis ton profil local.");
+          if (!annule) setMsg("Business activity imported from your local profile.");
         }
         if (!annule) appliquer(profil);
       } catch (e) {
@@ -93,65 +93,65 @@ export function ProfilMetierSection({ legacy }: { legacy: UserProfile | null }) 
         references_types: enListe(txt.refs, /\n/),
       });
       appliquer(saved);
-      setMsg("Profil métier enregistré.");
+      setMsg("Business profile saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
-  if (loading) return <div className="settings-section">Chargement…</div>;
+  if (loading) return <div className="settings-section">Loading…</div>;
 
   return (
     <div className="settings-section">
-      <h2>Profil métier</h2>
+      <h2>Business profile</h2>
       <p className="settings-section__desc">
-        Décrit ton savoir-faire pour l'analyse KRINOS (PYTHIA et second avis Laya).
-        N'y mets aucune donnée d'identité : nom, email et SIRET sont refusés.
+        Describes your expertise for KRINOS analysis (PYTHIA and the Laya second opinion).
+        Do not include any identity data: names, emails and company IDs (SIRET) are rejected.
       </p>
-      <Ligne label="Activité" hint="ex : ESN Java, cabinet AMO">
+      <Ligne label="Business activity" hint="e.g. Java IT services firm, project management consultancy">
         <input className="input" maxLength={400} value={p.activite}
           onChange={(e) => setP({ ...p, activite: e.target.value })} />
       </Ligne>
-      <Ligne label="Secteurs" hint="séparés par des virgules">
+      <Ligne label="Sectors" hint="comma-separated">
         <input className="input" value={txt.secteurs}
           onChange={(e) => setTxt({ ...txt, secteurs: e.target.value })} />
       </Ligne>
-      <Ligne label="Codes CPV" hint="ex : 72000000-5, 79411000-8">
+      <Ligne label="CPV codes" hint="e.g. 72000000-5, 79411000-8">
         <input className="input" value={txt.cpv}
           onChange={(e) => setTxt({ ...txt, cpv: e.target.value })} />
       </Ligne>
-      <Ligne label="Zone géographique" hint="région, départements, national…">
+      <Ligne label="Geographic area" hint="region, departments, nationwide…">
         <input className="input" maxLength={200} value={p.zone_geographique}
           onChange={(e) => setP({ ...p, zone_geographique: e.target.value })} />
       </Ligne>
-      <Ligne label="Effectif" hint="nombre de personnes">
+      <Ligne label="Headcount" hint="number of people">
         <input className="input" type="number" min={0} value={p.effectif ?? ""}
           onChange={(e) =>
             setP({ ...p, effectif: e.target.value === "" ? null : Number(e.target.value) })} />
       </Ligne>
-      <Ligne label="Chiffre d'affaires" hint="tranche annuelle">
+      <Ligne label="Revenue" hint="annual bracket">
         <select className="input" value={p.ca_tranche}
           onChange={(e) => setP({ ...p, ca_tranche: e.target.value })}>
           {TRANCHES_CA.map((t) => (
-            <option key={t} value={t}>{t || "Non renseigné"}</option>
+            <option key={t} value={t}>{t || "Not specified"}</option>
           ))}
         </select>
       </Ligne>
-      <Ligne label="Certifications" hint="ex : ISO 27001, Qualiopi">
+      <Ligne label="Certifications" hint="e.g. ISO 27001, Qualiopi">
         <input className="input" value={txt.certs}
           onChange={(e) => setTxt({ ...txt, certs: e.target.value })} />
       </Ligne>
-      <Ligne label="Types de marchés visés" hint="ex : services, accords-cadres">
+      <Ligne label="Target contract types" hint="e.g. services, framework agreements">
         <input className="input" value={txt.types}
           onChange={(e) => setTxt({ ...txt, types: e.target.value })} />
       </Ligne>
-      <Ligne label="Références types" hint="une par ligne, sans nom de personne">
+      <Ligne label="Typical references" hint="one per line, no personal names">
         <textarea className="response-comment-input" style={{ minHeight: 100 }} value={txt.refs}
           onChange={(e) => setTxt({ ...txt, refs: e.target.value })} />
       </Ligne>
 
       <div style={{ marginTop: 16 }}>
-        <button className="btn btn--gold" onClick={enregistrer}>Enregistrer</button>
+        <button className="btn btn--gold" onClick={enregistrer}>Save</button>
         {msg && <span style={{ marginLeft: 12 }}>{msg}</span>}
         {error && <span style={{ marginLeft: 12, color: "#c0392b" }}>{error}</span>}
       </div>

@@ -19,39 +19,39 @@ import { loadUserProfile } from "../lib/userProfile";
 type Props = { onToast: (t: ToastInput) => void; externalRefreshKey?: number };
 
 const STATUS_FILTERS: { id: StatutReponseHermion | "all"; label: string }[] = [
-  { id: "all",          label: "Toutes" },
-  { id: "en_attente",   label: "En attente" },
-  { id: "a_modifier",   label: "À modifier" },
-  { id: "validee",      label: "Validées" },
-  { id: "rejetee",      label: "Rejetées" },
-  { id: "exportee",     label: "Exportées" },
+  { id: "all",          label: "All" },
+  { id: "en_attente",   label: "Pending" },
+  { id: "a_modifier",   label: "Needs changes" },
+  { id: "validee",      label: "Approved" },
+  { id: "rejetee",      label: "Rejected" },
+  { id: "exportee",     label: "Exported" },
 ];
 
 /** Bandeau de validation humaine : la soumission au portail reste exclusivement humaine. */
 const MESSAGES_VALIDATION: Record<StatutReponseHermion, { titre: string; detail: string }> = {
   en_generation: {
-    titre: "Génération en cours",
-    detail: "HERMION rédige. Rien n'est validé ni soumis : relecture humaine à venir.",
+    titre: "Drafting in progress",
+    detail: "HERMION is drafting. Nothing is approved or submitted: human review comes next.",
   },
   en_attente: {
-    titre: "Validation humaine requise",
-    detail: "HERMION ne soumet jamais. Relisez, puis validez ou demandez une révision.",
+    titre: "Human approval required",
+    detail: "HERMION never submits. Review, then approve or request changes.",
   },
   a_modifier: {
-    titre: "Révision demandée",
-    detail: "Corrigez le contenu puis validez : la décision reste humaine.",
+    titre: "Changes requested",
+    detail: "Correct the content, then approve: the decision stays human.",
   },
   validee: {
-    titre: "Validée par un humain",
-    detail: "La soumission au portail reste manuelle : exportez le PDF puis déposez-le vous-même.",
+    titre: "Approved by a human",
+    detail: "Submission to the portal stays manual: export the PDF and upload it yourself.",
   },
   rejetee: {
-    titre: "Rejetée par un humain",
-    detail: "Cette réponse ne sera pas utilisée.",
+    titre: "Rejected by a human",
+    detail: "This response will not be used.",
   },
   exportee: {
-    titre: "PDF exporté",
-    detail: "Le dépôt sur le portail reste à faire, manuellement, par vous.",
+    titre: "PDF exported",
+    detail: "You still need to upload it to the portal yourself.",
   },
 };
 
@@ -66,7 +66,7 @@ function toUiStatus(s: StatutReponseHermion): ResponseStatus {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("fr-FR", {
+    return new Date(iso).toLocaleString("en-GB", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -170,7 +170,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
     } catch (e) {
       onToast({
         title: "HERMION",
-        app: "Erreur",
+        app: "Error",
         msg: e instanceof Error ? e.message : String(e),
         agent: "hermion",
       });
@@ -180,7 +180,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
   /** Enregistre le PDF : dialogue natif sous Tauri, téléchargement navigateur en mode web. */
   const telechargerPdf = async (id: number, version: number) => {
     const blob = await api.telechargerExportReponse(id);
-    await enregistrerPdf(blob, `reponse_${id}_v${version}.pdf`);
+    await enregistrerPdf(blob, `response_${id}_v${version}.pdf`);
   };
 
   const onDownload = async () => {
@@ -190,7 +190,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
     } catch (e) {
       onToast({
         title: "HERMION",
-        app: "Erreur de téléchargement",
+        app: "Download error",
         msg: e instanceof Error ? e.message : String(e),
         agent: "hermion",
       });
@@ -207,15 +207,15 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
       );
       onToast({
         title: "HERMION",
-        app: "Réponse exportée",
-        msg: `PDF généré pour la réponse v${updated.version}.`,
+        app: "Response exported",
+        msg: `PDF generated for response v${updated.version}.`,
         agent: "hermion",
       });
       await telechargerPdf(updated.id, updated.version);
     } catch (e) {
       onToast({
         title: "HERMION",
-        app: "Erreur d'export",
+        app: "Export error",
         msg: e instanceof Error ? e.message : String(e),
         agent: "hermion",
       });
@@ -240,15 +240,15 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
       );
       onToast({
         title: "HERMION",
-        app: "Réponse mise à jour",
-        msg: "Contenu enregistré, statut passé à « à modifier ».",
+        app: "Response updated",
+        msg: "Content saved, status set to \"needs changes\".",
         agent: "hermion",
       });
       return true;
     } catch (e) {
       onToast({
         title: "HERMION",
-        app: "Erreur de sauvegarde",
+        app: "Save error",
         msg: e instanceof Error ? e.message : String(e),
         agent: "hermion",
       });
@@ -285,7 +285,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
         })}
         <div style={{ flex: 1 }} />
         <button className="btn btn--ghost btn--sm" onClick={reload} disabled={loadingList}>
-          <Icon.refresh size={11} /> {loadingList ? "Chargement…" : "Rafraîchir"}
+          <Icon.refresh size={11} /> {loadingList ? "Loading…" : "Refresh"}
         </button>
       </div>
 
@@ -301,7 +301,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
             color: "var(--fg-2)",
           }}
         >
-          Erreur : {error}
+          Error: {error}
         </div>
       )}
 
@@ -309,13 +309,13 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
         <div className="responses-list">
           {loadingList && reponses.length === 0 ? (
             <div style={{ padding: 30, textAlign: "center", color: "var(--fg-3)", fontSize: 12.5 }}>
-              Chargement des réponses…
+              Loading responses…
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: 30, textAlign: "center", color: "var(--fg-3)", fontSize: 12.5 }}>
               {reponses.length === 0
-                ? "Aucune réponse HERMION rédigée pour l'instant. Va dans l'onglet Veille, choisis un AO à répondre, puis lance la rédaction."
-                : "Aucune réponse dans ce statut."}
+                ? "No HERMION responses drafted yet. Go to the Tenders tab, pick a tender to answer, then start drafting."
+                : "No responses with this status."}
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
@@ -335,14 +335,14 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
                   onClick={() => setSelectedId(r.id)}
                 >
                   <div className="response-card__top">
-                    <span>rep-{r.id} · v{r.version}</span>
+                    <span>resp-{r.id} · v{r.version}</span>
                     <StatusPill status={uiStatus} />
                   </div>
                   <h3 className="response-card__title">{r.appel_offre_titre}</h3>
                   <div className="response-card__bottom">
                     <span>{r.appel_offre_emetteur || "—"}</span>
                     <span>
-                      {r.longueur_mots ? `${r.longueur_mots} mots · ` : ""}
+                      {r.longueur_mots ? `${r.longueur_mots} words · ` : ""}
                       {formatDate(r.cree_le).split(" ")[1] || formatDate(r.cree_le)}
                     </span>
                   </div>
@@ -367,7 +367,7 @@ export function Responses({ onToast, externalRefreshKey = 0 }: Props) {
         )}
         {!selectedSummary && !loadingList && reponses.length > 0 && (
           <div className="response-detail" style={{ padding: 30, color: "var(--fg-3)" }}>
-            Sélectionne une réponse à gauche.
+            Select a response on the left.
           </div>
         )}
       </div>
@@ -426,7 +426,7 @@ function ResponseDetail({
   const profil = loadUserProfile();
   const profilLabel = profil
     ? `${profil.firstName} ${profil.lastName}`.trim()
-    : "Utilisateur non configuré";
+    : "User not configured";
 
   return (
     // Changement de réponse/version (key=detail.id côté parent) : le détail glisse.
@@ -446,7 +446,7 @@ function ResponseDetail({
             marginBottom: 8,
           }}
         >
-          Réponse #{detail.id} · v{detail.version}
+          Response #{detail.id} · v{detail.version}
         </div>
         <h2
           style={{
@@ -460,7 +460,7 @@ function ResponseDetail({
           {summary.appel_offre_titre}
         </h2>
         <div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 16 }}>
-          {summary.appel_offre_emetteur || "Émetteur inconnu"}
+          {summary.appel_offre_emetteur || "Unknown issuer"}
         </div>
 
         <div style={{ marginBottom: 18 }}>
@@ -488,21 +488,21 @@ function ResponseDetail({
         <dl className="kv" style={{ marginBottom: 22 }}>
           <dt>Version</dt>
           <dd style={{ fontFamily: "var(--font-mono)" }}>v{detail.version}</dd>
-          <dt>Mots</dt>
+          <dt>Words</dt>
           <dd>{detail.longueur_mots ?? "—"}</dd>
-          <dt>Généré</dt>
+          <dt>Generated</dt>
           <dd style={{ fontFamily: "var(--font-mono)", fontSize: 11.5 }}>
             {formatDate(detail.cree_le)}
           </dd>
-          <dt>Durée</dt>
+          <dt>Duration</dt>
           <dd>{formatDuree(detail.duree_generation_ms)}</dd>
-          <dt>Profil</dt>
+          <dt>Profile</dt>
           <dd style={{ fontSize: 11.5 }}>{profilLabel}</dd>
           <dt>Agent</dt>
           <dd>
             <AgentChip agent="hermion" state="active" compact />
           </dd>
-          <dt>Score AO</dt>
+          <dt>Tender score</dt>
           <dd>
             <Score value={70} />
           </dd>
@@ -515,13 +515,13 @@ function ResponseDetail({
             onClick={() =>
               onStatusChange("validee", undefined, {
                 title: "HERMION",
-                app: "Réponse validée",
-                msg: `La réponse v${detail.version} a été validée — l'AO passe en « répondu ».`,
+                app: "Response approved",
+                msg: `Response v${detail.version} approved — the tender moves to "answered".`,
                 agent: "hermion",
               })
             }
           >
-            <Icon.check size={13} /> Valider
+            <Icon.check size={13} /> Approve
           </button>
           <button
             className="btn btn--warn"
@@ -529,13 +529,13 @@ function ResponseDetail({
             onClick={() =>
               onStatusChange("a_modifier", comment, {
                 title: "HERMION",
-                app: "Révision demandée",
-                msg: "La réponse est passée en « à modifier ».",
+                app: "Changes requested",
+                msg: "The response is now marked \"needs changes\".",
                 agent: "hermion",
               })
             }
           >
-            <Icon.refresh size={13} /> Demander une révision
+            <Icon.refresh size={13} /> Request changes
           </button>
           <button
             className="btn btn--danger"
@@ -543,20 +543,20 @@ function ResponseDetail({
             onClick={() =>
               onStatusChange("rejetee", comment, {
                 title: "HERMION",
-                app: "Réponse rejetée",
-                msg: `La réponse v${detail.version} a été rejetée.`,
+                app: "Response rejected",
+                msg: `Response v${detail.version} rejected.`,
                 agent: "hermion",
               })
             }
           >
-            <Icon.close size={13} /> Rejeter
+            <Icon.close size={13} /> Reject
           </button>
           {detail.statut === "exportee" ? (
             <button
               className="btn btn--ok"
               onClick={onDownload}
             >
-              <Icon.download size={13} /> Télécharger le PDF
+              <Icon.download size={13} /> Download PDF
             </button>
           ) : (
             <button
@@ -565,11 +565,11 @@ function ResponseDetail({
               onClick={onExport}
               title={
                 detail.statut !== "validee"
-                  ? "La réponse doit d'abord être validée"
-                  : "Génère le PDF et le télécharge"
+                  ? "The response must be approved first"
+                  : "Generate and download the PDF"
               }
             >
-              <Icon.download size={13} /> Exporter en PDF
+              <Icon.download size={13} /> Export to PDF
             </button>
           )}
           <div className="divider" />
@@ -580,7 +580,7 @@ function ResponseDetail({
               if (await onSaveContent(editedContent, comment)) setEditing(false);
             }}
           >
-            <Icon.check size={13} /> Enregistrer les modifications
+            <Icon.check size={13} /> Save changes
           </button>
           <button
             className={`btn ${editing ? "btn--ghost" : ""}`}
@@ -594,7 +594,7 @@ function ResponseDetail({
             }}
             disabled={verrouille}
           >
-            <Icon.refresh size={13} /> {editing ? "Annuler l'édition" : "Éditer le contenu"}
+            <Icon.refresh size={13} /> {editing ? "Cancel editing" : "Edit content"}
           </button>
         </div>
 
@@ -609,13 +609,13 @@ function ResponseDetail({
                 marginBottom: 8,
               }}
             >
-              Commentaire humain
+              Reviewer comment
             </div>
             <textarea
               className="response-comment-input"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Notes internes, raisons de la révision/rejet, points à corriger…"
+              placeholder="Internal notes, reasons for changes/rejection, points to fix…"
             />
           </div>
         )}
@@ -624,12 +624,12 @@ function ResponseDetail({
       <div className="response-pdf">
         <div className="pdf-toolbar">
           <span style={{ fontSize: 11 }}>
-            Réponse rep-{detail.id} · <strong style={{ color: "var(--fg)" }}>v{detail.version}</strong>
+            Response resp-{detail.id} · <strong style={{ color: "var(--fg)" }}>v{detail.version}</strong>
           </span>
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 10.5 }}>
-            {detail.longueur_mots ?? "—"} mots ·{" "}
-            {Math.max(1, Math.ceil((detail.longueur_mots ?? 0) / 350))} p. approx.
+            {detail.longueur_mots ?? "—"} words ·{" "}
+            {Math.max(1, Math.ceil((detail.longueur_mots ?? 0) / 350))} pp. approx.
           </span>
         </div>
 

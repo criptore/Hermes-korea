@@ -42,7 +42,7 @@ export function Ouverture({ onFin }: { onFin: () => void }) {
         HERMES
       </motion.span>
       <GreekKey width={200} opacity={0.7} strokeWidth={1.4} trace retard={0.2} />
-      <span className="ouverture__passer">Cliquer pour passer</span>
+      <span className="ouverture__passer">Click to skip</span>
     </motion.div>
   );
 }

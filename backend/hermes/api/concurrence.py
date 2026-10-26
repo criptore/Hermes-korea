@@ -82,12 +82,12 @@ class ConcurrenceRead(BaseModel):
 @router.get("/{ao_id}/concurrence", response_model=ConcurrenceRead)
 async def concurrence(
     ao_id: int,
-    actualiser: bool = Query(default=False, description="Ignore le cache (TTL 24 h)"),
+    actualiser: bool = Query(default=False, description="Ignore the cache (24 h TTL)"),
     session: Session = Depends(get_session),
 ) -> ConcurrenceRead:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     await _rattraper_identifiants(session, ao)
     cpv = ao.code_cpv or decp._cpv_valide(ao.code_naf)  # TED stocke le CPV dans code_naf
@@ -96,8 +96,8 @@ async def concurrence(
         return ConcurrenceRead(
             siret=None, cpv=None, acheteur=None, secteur=None, maj_le=None,
             depuis_cache=False,
-            message="SIRET acheteur et CPV inconnus pour cet appel d'offre : "
-            "historique DECP non calculable.",
+            message="Buyer SIRET and CPV unknown for this tender: "
+            "DECP history cannot be computed.",
         )
 
     try:
@@ -105,17 +105,17 @@ async def concurrence(
             session, siret=ao.emetteur_siret, cpv=cpv, forcer=actualiser
         )
     except decp.DecpIndisponible as exc:
-        logger.warning("DECP indisponible pour AO {} : {}", ao_id, exc)
+        logger.warning("DECP unavailable for tender {}: {}", ao_id, exc)
         return ConcurrenceRead(
             siret=ao.emetteur_siret, cpv=cpv, acheteur=None, secteur=None, maj_le=None,
             depuis_cache=False,
-            message="Source DECP (data.gouv.fr) indisponible, réessayez plus tard.",
+            message="DECP source (data.gouv.fr) unavailable, try again later.",
         )
 
     message = res["erreur"]
     if not ao.emetteur_siret:
         message = message or (
-            "SIRET acheteur inconnu : seul l'historique du secteur (CPV) est affiché."
+            "Buyer SIRET unknown: only the sector (CPV) history is shown."
         )
     return ConcurrenceRead(
         siret=ao.emetteur_siret, cpv=cpv,
@@ -137,7 +137,7 @@ async def _rattraper_identifiants(session: Session, ao: AppelOffre) -> None:
     try:
         siret, cpv = await recuperer_identifiants(ao.reference_externe)
     except httpx.HTTPError as exc:
-        logger.warning("Rattrapage SIRET BOAMP impossible pour AO {} : {}", ao.id, exc)
+        logger.warning("BOAMP SIRET backfill failed for tender {}: {}", ao.id, exc)
         return
     if not (siret or cpv):
         _rattrapages_vides[ao.id or 0] = time.monotonic()

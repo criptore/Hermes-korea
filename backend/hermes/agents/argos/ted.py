@@ -289,7 +289,7 @@ def _page_anterieure(notices: list[dict[str, Any]], borne: datetime) -> bool:
 
 
 def _notice_vers_ao(notice: dict[str, Any]) -> AOCollecte:
-    titre = _texte_multi(notice.get("notice-title")) or "Avis TED (sans titre)"
+    titre = _texte_multi(notice.get("notice-title")) or "TED notice (untitled)"
     if len(titre) > 500:
         titre = titre[:497] + "…"
 

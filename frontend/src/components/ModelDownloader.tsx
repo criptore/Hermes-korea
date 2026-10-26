@@ -9,8 +9,8 @@ type Props = {
 };
 
 function formatGo(octets: number): string {
-  if (octets <= 0) return "0 Go";
-  return `${(octets / GIGA).toFixed(2)} Go`;
+  if (octets <= 0) return "0 GB";
+  return `${(octets / GIGA).toFixed(2)} GB`;
 }
 
 /**
@@ -99,8 +99,8 @@ export function ModelDownloader({ onReady }: Props) {
 
   if (!statut) {
     return (
-      <ModalShell titre="Initialisation de HERMES" sousTitre="Vérification de PYTHIA…">
-        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Connexion au backend…</div>
+      <ModalShell titre="Starting HERMES" sousTitre="Checking PYTHIA…">
+        <div style={{ color: "var(--fg-3)", fontSize: 13 }}>Connecting to the backend…</div>
         {erreur && <ErreurBox message={erreur} />}
       </ModalShell>
     );
@@ -109,14 +109,14 @@ export function ModelDownloader({ onReady }: Props) {
   if (!statut.ollama_disponible) {
     return (
       <ModalShell
-        titre="PYTHIA indisponible"
-        sousTitre="Ollama ne répond pas sur 127.0.0.1:11434"
+        titre="PYTHIA unavailable"
+        sousTitre="Ollama is not responding on 127.0.0.1:11434"
       >
         <p style={{ fontSize: 13, color: "var(--fg-2)", lineHeight: 1.5 }}>
-          PYTHIA (Ollama) doit être démarré pour qu'HERMES fonctionne. Si HERMES
-          a été lancé via <code>hermes.exe</code>, Ollama est démarré
-          automatiquement — patiente quelques secondes. Sinon, lance
-          <code> ollama serve </code> manuellement.
+          PYTHIA (Ollama) must be running for HERMES to work. When HERMES is
+          started as the desktop app, it starts Ollama automatically — wait a few
+          seconds. Otherwise, open the Ollama app (macOS) or run
+          <code> ollama serve </code> yourself.
         </p>
         {erreur && <ErreurBox message={erreur} />}
       </ModalShell>
@@ -136,18 +136,18 @@ export function ModelDownloader({ onReady }: Props) {
     const installesDispo = options?.installes ?? [];
     return (
       <ModalShell
-        titre="Modèle PYTHIA requis"
-        sousTitre={`Le modèle « ${statut.modele} » n'est pas installé`}
+        titre="PYTHIA model required"
+        sousTitre={`The model "${statut.modele}" is not installed`}
       >
         <p style={{ fontSize: 13, color: "var(--fg-2)", lineHeight: 1.5, marginBottom: 14 }}>
-          Rien n'est téléchargé sans ton accord. Choisis un modèle déjà présent
-          dans Ollama, ou lance explicitement un téléchargement.
+          Nothing is downloaded without your consent. Pick a model already
+          available in Ollama, or explicitly start a download.
         </p>
 
         {installesDispo.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
-              Modèles déjà installés
+              Models already installed
             </div>
             {installesDispo.map((nom) => (
               <button
@@ -156,14 +156,14 @@ export function ModelDownloader({ onReady }: Props) {
                 style={{ marginRight: 6, marginBottom: 6 }}
                 onClick={() => void utiliserInstalle(nom)}
               >
-                Utiliser {nom}
+                Use {nom}
               </button>
             ))}
           </div>
         )}
 
         <div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
-          Télécharger un modèle
+          Download a model
         </div>
         <select
           value={choix}
@@ -173,20 +173,20 @@ export function ModelDownloader({ onReady }: Props) {
           {(options?.proposes ?? []).map((m) => (
             <option key={m.nom} value={m.nom}>
               {m.nom} — ~{formatGo(m.taille_octets)}
-              {m.installe ? " (installé)" : ""}
+              {m.installe ? " (installed)" : ""}
             </option>
           ))}
         </select>
         <div style={{ fontSize: 12, color: "var(--fg-3)", lineHeight: 1.5 }}>
-          Taille estimée (indicative) : {taille > 0 ? formatGo(taille) : "inconnue"}
-          {" · "}espace disque libre : {libre > 0 ? formatGo(libre) : "inconnu"}
+          Estimated size (approximate): {taille > 0 ? formatGo(taille) : "unknown"}
+          {" · "}free disk space: {libre > 0 ? formatGo(libre) : "unknown"}
         </div>
         {insuffisant && (
-          <ErreurBox message="Espace disque probablement insuffisant pour ce modèle." />
+          <ErreurBox message="Probably not enough disk space for this model." />
         )}
         {p.statut === "annule" && (
           <div style={{ marginTop: 8, fontSize: 12, color: "var(--fg-3)" }}>
-            Téléchargement annulé.
+            Download cancelled.
           </div>
         )}
 
@@ -196,7 +196,7 @@ export function ModelDownloader({ onReady }: Props) {
             disabled={!choix || !!propose?.installe || insuffisant}
             onClick={() => void lancer()}
           >
-            Télécharger
+            Download
           </button>
         </div>
 
@@ -208,12 +208,12 @@ export function ModelDownloader({ onReady }: Props) {
 
   return (
     <ModalShell
-      titre="Téléchargement de PYTHIA"
-      sousTitre={`Modèle ${statut.modele}`}
+      titre="Downloading PYTHIA"
+      sousTitre={`Model ${statut.modele}`}
     >
       <p style={{ fontSize: 13, color: "var(--fg-2)", lineHeight: 1.5, marginBottom: 16 }}>
-        HERMES télécharge le modèle de langage local que tu as demandé. Tu peux
-        annuler à tout moment ; l'application n'est utilisable qu'à la fin.
+        HERMES is downloading the local language model you requested. You can
+        cancel at any time; the app becomes usable once it finishes.
       </p>
 
       <div
@@ -253,12 +253,12 @@ export function ModelDownloader({ onReady }: Props) {
       </div>
 
       <div style={{ marginTop: 10, fontSize: 11.5, color: "var(--fg-4)" }}>
-        Statut Ollama : <code>{p.statut || "en attente"}</code>
+        Ollama status: <code>{p.statut || "waiting"}</code>
       </div>
 
       <div style={{ marginTop: 14 }}>
         <button className="btn" onClick={() => void annuler()}>
-          Annuler le téléchargement
+          Cancel download
         </button>
       </div>
 
@@ -326,7 +326,7 @@ function ErreurBox({ message }: { message: string }) {
         color: "var(--fg-2)",
       }}
     >
-      Erreur : {message}
+      Error: {message}
     </div>
   );
 }

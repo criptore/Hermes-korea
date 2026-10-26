@@ -69,7 +69,7 @@ async def traiter(
     """
     if pipeline_en_cours():
         raise HTTPException(
-            status_code=409, detail="Un pipeline est déjà en cours d'exécution."
+            status_code=409, detail="A pipeline is already running."
         )
     rapport = await traiter_pipeline(session, limite=limite)
     return RapportIO(

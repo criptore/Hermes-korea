@@ -37,17 +37,16 @@ from hermes.db.models import (
 )
 
 SYSTEM_PROMPT_PLAN = (
-    "Tu es HERMION, expert français de la réponse aux appels d'offre publics. "
-    "Tu structures les réponses de manière claire, factuelle et conforme aux "
-    "attendus du règlement de consultation. Tu produis EXCLUSIVEMENT du JSON "
-    "valide quand on te le demande, sans texte autour."
+    "You are HERMION, an expert in responding to public tenders. You structure "
+    "responses clearly, factually and in line with the requirements of the tender "
+    "rules. You output ONLY valid JSON when asked to, with no surrounding text."
 )
 
 SYSTEM_PROMPT_SECTION = (
-    "Tu es HERMION, expert français de la réponse aux appels d'offre publics. "
-    "Tu rédiges des sections en français professionnel, neutre et factuel. "
-    "Tu utilises uniquement les informations fournies, sans inventer de "
-    "compétences ou de références non vérifiées. Tu produis du markdown clair."
+    "You are HERMION, an expert in responding to public tenders. You write "
+    f"sections in professional, neutral and factual {settings.pythia_langue_sortie}. "
+    "You only use the information provided, without inventing unverified skills "
+    "or references. You output clean markdown."
 )
 
 NB_SECTIONS_DEFAUT = (3, 6)  # min, max sections imposées au LLM
@@ -80,14 +79,14 @@ class ProfilUtilisateur:
         lignes: list[str] = []
         nom_complet = f"{self.prenom} {self.nom}".strip()
         if nom_complet:
-            lignes.append(f"Contact : {nom_complet}")
+            lignes.append(f"Contact: {nom_complet}")
         if self.email:
-            lignes.append(f"Email : {self.email}")
+            lignes.append(f"Email: {self.email}")
         if self.entreprise:
-            lignes.append(f"Entreprise : {self.entreprise}")
+            lignes.append(f"Company: {self.entreprise}")
         if self.activite:
-            lignes.append(f"Activité : {self.activite}")
-        return "\n".join(lignes) if lignes else "(profil utilisateur non renseigné)"
+            lignes.append(f"Business activity: {self.activite}")
+        return "\n".join(lignes) if lignes else "(user profile not specified)"
 
 
 @dataclass(frozen=True)
@@ -109,12 +108,12 @@ async def rediger_reponse(
     sur le résumé, le score et les critères extraits par KRINOS).
     """
     if appel_offre.id is None:
-        raise ErreurRedactionHermion("Appel d'offre non persisté")
+        raise ErreurRedactionHermion("Tender not saved")
 
     ao_id = appel_offre.id
     if ao_id in _generations_en_cours:
         raise ErreurGenerationEnCours(
-            f"Une rédaction est déjà en cours pour l'AO {ao_id}"
+            f"A draft is already in progress for tender {ao_id}"
         )
     _generations_en_cours.add(ao_id)
     progression.demarrer(ao_id)
@@ -126,7 +125,7 @@ async def rediger_reponse(
         progression.echec(ao_id, str(exc))
         raise
     except Exception as exc:  # noqa: BLE001
-        progression.echec(ao_id, f"Erreur inattendue : {exc}")
+        progression.echec(ao_id, f"Unexpected error: {exc}")
         raise
     finally:
         _generations_en_cours.discard(ao_id)
@@ -148,11 +147,11 @@ async def _rediger_reponse_suivie(
     ).first()
     if analyse is None:
         raise ErreurRedactionHermion(
-            "Aucune analyse KRINOS pour cet AO — lancer /krinos/.../analyser d'abord"
+            "No KRINOS analysis for this tender — run /krinos/.../analyser first"
         )
 
     progression.maj(
-        ao_id, progression.ETAPE_PREPARATION, message="Analyse KRINOS chargée"
+        ao_id, progression.ETAPE_PREPARATION, message="KRINOS analysis loaded"
     )
     workflow_cfg = charger_workflow(session)
     consignes = _combiner_consignes(workflow_cfg, consignes_supplementaires)
@@ -200,8 +199,8 @@ async def _rediger_reponse_suivie(
         session,
         niveau=NiveauLog.INFO,
         message=(
-            f"HERMION : réponse v{version} générée pour AO {appel_offre.id} "
-            f"({reponse.longueur_mots} mots, {duree_ms} ms)"
+            f"HERMION: response v{version} generated for tender {appel_offre.id} "
+            f"({reponse.longueur_mots} words, {duree_ms} ms)"
         ),
         appel_offre_id=appel_offre.id,
     )
@@ -218,15 +217,16 @@ async def _rediger_reponse_suivie(
 
 async def _generer_plan(contexte: dict[str, Any]) -> list[dict[str, str]]:
     mini, maxi = NB_SECTIONS_DEFAUT
+    langue = settings.pythia_langue_sortie
     prompt = (
-        f"Propose un plan de réponse en {mini} à {maxi} sections pour l'appel "
-        "d'offre ci-dessous.\n"
-        "IMPORTANT : tous les titres et tous les briefs DOIVENT être rédigés "
-        "en français (pas d'anglais, pas de calque type 'Scope of Work').\n"
-        "Réponds en JSON strict, sous la forme :\n"
+        f"Suggest a response outline of {mini} to {maxi} sections for the tender "
+        "below.\n"
+        f"IMPORTANT: every title and every brief MUST be written in {langue}, "
+        "whatever the language of the tender documents.\n"
+        "Answer in strict JSON, in the form:\n"
         '  {"sections": [{"titre": "...", "brief": "..."}]}\n'
-        "Le 'titre' est court (3-6 mots, français), le 'brief' précise en 1-2 "
-        "phrases (en français) ce que doit contenir la section.\n"
+        f"The 'titre' is short (3-6 words, {langue}); the 'brief' states in 1-2 "
+        f"sentences ({langue}) what the section must contain.\n"
         "\n"
         f"{_bloc_contexte(contexte)}"
     )
@@ -278,17 +278,18 @@ async def _rediger_sections(
         longueur_cible = _longueur_cible(section)
         contrainte_longueur = _contrainte_longueur_section(longueur_cible)
         prompt = (
-            f"Rédige la section {index}/{len(plan)} d'une réponse à appel d'offre.\n"
-            f"Titre de la section    : {section['titre']}\n"
-            f"Attendu de la section  : {section['brief'] or '(libre)'}\n"
-            f"Plan global de la réponse :\n  - "
+            f"Write section {index}/{len(plan)} of a tender response.\n"
+            f"Section title          : {section['titre']}\n"
+            f"Expected content       : {section['brief'] or '(free)'}\n"
+            f"Overall response outline:\n  - "
             + "\n  - ".join(titres)
             + "\n\n"
-            "Contraintes :\n"
-            "  - Rédige en français professionnel, factuel, sans superlatifs vides.\n"
-            "  - Markdown : un seul titre de niveau 2 (## ) pour la section.\n"
+            "Constraints:\n"
+            f"  - Write in professional, factual {settings.pythia_langue_sortie}, "
+            "with no empty superlatives.\n"
+            "  - Markdown: a single level-2 heading (## ) for the section.\n"
             f"  - {contrainte_longueur}\n"
-            "  - N'invente aucune référence client, certification ou chiffre.\n"
+            "  - Do not invent any client reference, certification or figure.\n"
             "\n"
             f"{_bloc_contexte(contexte)}"
         )
@@ -300,7 +301,7 @@ async def _rediger_sections(
             )
         except pythia.ErreurPythia as exc:
             raise ErreurRedactionHermion(
-                f"PYTHIA — section '{section['titre']}' : {exc}"
+                f"PYTHIA — section '{section['titre']}': {exc}"
             ) from exc
         sections_textes.append(_normaliser_section(reponse.texte, section["titre"]))
     return sections_textes
@@ -312,18 +313,18 @@ def _assembler_document(
     sections: list[str],
 ) -> str:
     en_tete = [
-        f"# Réponse — {appel_offre.titre}",
+        f"# Response — {appel_offre.titre}",
         "",
     ]
     if appel_offre.emetteur:
-        en_tete.append(f"*Émetteur : {appel_offre.emetteur}*")
+        en_tete.append(f"*Issuer: {appel_offre.emetteur}*")
     if appel_offre.reference_externe:
-        en_tete.append(f"*Référence : {appel_offre.reference_externe}*")
+        en_tete.append(f"*Reference: {appel_offre.reference_externe}*")
     if appel_offre.date_limite:
-        en_tete.append(f"*Date limite : {appel_offre.date_limite.date().isoformat()}*")
+        en_tete.append(f"*Deadline: {appel_offre.date_limite.date().isoformat()}*")
     en_tete.append("")
 
-    sommaire = ["## Sommaire", ""]
+    sommaire = ["## Contents", ""]
     for index, section in enumerate(plan, start=1):
         sommaire.append(f"{index}. {section['titre']}")
     sommaire.append("")
@@ -346,7 +347,7 @@ def _plan_depuis_workflow(workflow_cfg: WorkflowReponse) -> list[dict[str, str]]
     for section in workflow_cfg.sections:
         brief = section.brief
         if section.longueur_cible:
-            indice = f"Longueur visée : environ {section.longueur_cible} mots."
+            indice = f"Target length: about {section.longueur_cible} words."
             brief = f"{brief}\n{indice}" if brief else indice
         item = {"titre": section.titre, "brief": brief}
         if section.longueur_cible:
@@ -368,12 +369,12 @@ def _longueur_cible(section: dict[str, str]) -> int | None:
 
 def _contrainte_longueur_section(longueur_cible: int | None) -> str:
     if longueur_cible is None:
-        return "150 à 400 mots, paragraphes courts."
+        return "150 to 400 words, short paragraphs."
     bas = max(80, int(longueur_cible * 0.8))
     haut = max(bas + 20, int(longueur_cible * 1.2))
     return (
-        f"Vise {longueur_cible} mots environ "
-        f"({bas} à {haut} mots), paragraphes courts."
+        f"Aim for about {longueur_cible} words "
+        f"({bas} to {haut} words), short paragraphs."
     )
 
 
@@ -451,7 +452,7 @@ def _construire_contexte(
             "tags": tags,
             "criteres": analyse.criteres_extraits or "",
         },
-        "documents": "\n\n".join(extraits) if extraits else "(aucun extrait documentaire)",
+        "documents": "\n\n".join(extraits) if extraits else "(no document excerpt)",
         "profil": (profil or ProfilUtilisateur()).en_texte(),
         "consignes": (consignes_supplementaires or "").strip(),
     }
@@ -461,28 +462,28 @@ def _bloc_contexte(contexte: dict[str, Any]) -> str:
     ao = contexte["ao"]
     analyse = contexte["analyse"]
     lignes = [
-        "## Appel d'offre",
-        f"Titre      : {ao['titre']}",
-        f"Émetteur   : {ao['emetteur']}",
-        f"Objet      : {ao['objet']}",
-        f"Budget     : {ao['budget']} {ao['devise']}",
-        f"Date limite: {ao['date_limite']}",
-        f"Type marché: {ao['type_marche']}",
-        f"Zone       : {ao['zone']}",
-        f"Code NAF   : {ao['code_naf']}",
+        "## Tender",
+        f"Title        : {ao['titre']}",
+        f"Issuer       : {ao['emetteur']}",
+        f"Subject      : {ao['objet']}",
+        f"Budget       : {ao['budget']} {ao['devise']}",
+        f"Deadline     : {ao['date_limite']}",
+        f"Contract type: {ao['type_marche']}",
+        f"Area         : {ao['zone']}",
+        f"NAF code     : {ao['code_naf']}",
         "",
-        "## Analyse KRINOS",
-        f"Score      : {analyse['score']:.0f}/100",
-        f"Résumé     : {analyse['resume']}",
-        f"Tags       : {', '.join(analyse['tags']) if analyse['tags'] else '(aucun)'}",
-        f"Critères   : {analyse['criteres'] or '(non précisés)'}",
+        "## KRINOS analysis",
+        f"Score        : {analyse['score']:.0f}/100",
+        f"Summary      : {analyse['resume']}",
+        f"Tags         : {', '.join(analyse['tags']) if analyse['tags'] else '(none)'}",
+        f"Criteria     : {analyse['criteres'] or '(not specified)'}",
         "",
-        "## Profil du répondant",
+        "## Respondent profile",
         contexte["profil"],
     ]
     if contexte["consignes"]:
-        lignes.extend(["", "## Consignes utilisateur", contexte["consignes"]])
-    lignes.extend(["", "## Extraits documentaires", contexte["documents"]])
+        lignes.extend(["", "## User instructions", contexte["consignes"]])
+    lignes.extend(["", "## Document excerpts", contexte["documents"]])
     return "\n".join(lignes)
 
 

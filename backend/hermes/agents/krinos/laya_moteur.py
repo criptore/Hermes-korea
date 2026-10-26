@@ -50,7 +50,7 @@ class ModeleLayaAltere(ErreurLaya):
 
     def __init__(self, fichiers: list[str]) -> None:
         super().__init__(
-            "modèle Laya altéré, à réinstaller (empreinte SHA-256 invalide : "
+            "Laya model tampered with, reinstall it (invalid SHA-256 checksum: "
             + ", ".join(fichiers)
             + ")"
         )
@@ -197,12 +197,12 @@ class MoteurOnnx:
 
         for f in fichiers_requis(precision):
             if not (dossier / f.chemin).is_file():
-                raise ModeleLayaAbsent(f"fichier du modèle Laya manquant : {f.chemin}")
+                raise ModeleLayaAbsent(f"Laya model file missing: {f.chemin}")
         try:
             import onnxruntime as ort
             from tokenizers import Tokenizer
         except ImportError as exc:  # pragma: no cover — dépendances du paquet
-            raise ErreurLaya(f"dépendance manquante ({exc.name})") from exc
+            raise ErreurLaya(f"missing dependency ({exc.name})") from exc
 
         cfg = json.loads((dossier / "config.json").read_text(encoding="utf-8")).get("laya", {})
         self.max_len = max(64, min(int(max_len), 8192))
@@ -242,7 +242,7 @@ class MoteurOnnx:
                 self.max_option_tokens,
             )
             if len(marqueurs) != len(rendre_options(q)):
-                raise ErreurLaya(f"question {nom!r} : options hors budget de tête")
+                raise ErreurLaya(f"question {nom!r}: options exceed the head budget")
             entrees = {
                 "input_ids": np.asarray([ids], dtype=np.int64),
                 "attention_mask": np.ones((1, len(ids)), dtype=np.int64),

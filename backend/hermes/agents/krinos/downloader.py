@@ -103,13 +103,13 @@ async def _verifier_url_publique(url: str) -> None:
     """
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise ErreurTelechargementDocument("Seules les URLs HTTP/HTTPS sont supportées")
+        raise ErreurTelechargementDocument("Only HTTP/HTTPS URLs are supported")
     try:
         ips = await _resoudre_ips(parsed.hostname)
     except OSError as exc:
-        raise ErreurTelechargementDocument(f"Résolution DNS impossible : {exc}") from exc
+        raise ErreurTelechargementDocument(f"DNS resolution failed: {exc}") from exc
     if not ips:
-        raise ErreurTelechargementDocument("Résolution DNS sans résultat")
+        raise ErreurTelechargementDocument("DNS resolution returned no result")
     for brute in ips:
         ip = ipaddress.ip_address(brute.split("%")[0])
         if (
@@ -120,7 +120,7 @@ async def _verifier_url_publique(url: str) -> None:
             or ip.is_multicast
             or ip.is_unspecified
         ):
-            raise ErreurTelechargementDocument("Adresse non publique refusée")
+            raise ErreurTelechargementDocument("Non-public address refused")
 
 
 async def _telecharger_url(
@@ -161,7 +161,7 @@ async def _telecharger_url(
                     )
             raise ErreurTelechargementDocument("Trop de redirections")
     except httpx.HTTPError as exc:
-        raise ErreurTelechargementDocument(f"Téléchargement impossible : {exc}") from exc
+        raise ErreurTelechargementDocument(f"Download failed: {exc}") from exc
 
 
 def _persister_document(

@@ -52,7 +52,7 @@ async def executer_collecte(
     try:
         items = await scraper.collecter(limite=limite)
     except Exception as exc:  # noqa: BLE001
-        msg = f"Erreur collecte {scraper.nom} : {exc}"
+        msg = f"Collection error {scraper.nom}: {exc}"
         logger.exception(msg)
         resultat.erreurs.append(str(exc))
         resultat.duree_ms = int((time.monotonic() - debut) * 1000)
@@ -108,14 +108,14 @@ async def executer_collecte(
         agent="ARGOS",
         niveau=NiveauLog.WARNING if resultat.partielle else NiveauLog.INFO,
         message=(
-            f"Collecte {scraper.nom} : {resultat.ao_nouveaux} nouveaux / "
-            f"{resultat.ao_trouves} trouvés "
-            f"(dédoublonnés : {resultat.ao_dedoublonnes}, "
-            f"filtrés : {resultat.ao_filtres}) "
-            f"en {resultat.duree_ms} ms"
+            f"Collection {scraper.nom}: {resultat.ao_nouveaux} new / "
+            f"{resultat.ao_trouves} found "
+            f"(duplicates: {resultat.ao_dedoublonnes}, "
+            f"filtered: {resultat.ao_filtres}) "
+            f"in {resultat.duree_ms} ms"
             + (
-                " — PARTIELLE : erreur en cours de pagination, "
-                "fenêtre incrémentale non avancée"
+                " — PARTIAL: error during pagination, "
+                "incremental window not advanced"
                 if resultat.partielle
                 else ""
             )
@@ -147,7 +147,7 @@ def _injecter_credentials(scraper: Scraper, portail: Portail) -> None:
     try:
         credentials = dechiffrer_credentials(portail.credentials_chiffres)
     except ErreurCredentials:
-        logger.exception(f"Credentials ARGOS invalides pour le portail {portail.nom}")
+        logger.exception(f"Invalid ARGOS credentials for portal {portail.nom}")
         raise
     scraper.credentials = credentials or {}
 

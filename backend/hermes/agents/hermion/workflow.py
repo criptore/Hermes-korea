@@ -25,6 +25,7 @@ from datetime import UTC, datetime
 from sqlmodel import Session
 
 from hermes.agents import pythia
+from hermes.config import settings
 from hermes.db.models import Parametre
 
 CLE_PARAMETRE = "hermion.workflow"
@@ -107,7 +108,7 @@ def enregistrer_workflow(
         entree = Parametre(
             cle=CLE_PARAMETRE,
             valeur=payload,
-            description="Workflow de rédaction HERMION — sections + consignes (JSON)",
+            description="HERMION drafting workflow — sections + instructions (JSON)",
         )
     else:
         entree.valeur = payload
@@ -122,13 +123,14 @@ def enregistrer_workflow(
 # --------------------------------------------------------------------------- #
 
 
-SYSTEM_PROMPT_DERIVATION = (
-    "Tu es HERMION, expert français de la réponse aux appels d'offre publics. "
-    "Tu analyses la manière dont une entreprise structure ses réponses et tu "
-    "en extrais un workflow de rédaction réutilisable : une liste ordonnée de "
-    "sections, chacune avec un titre court en français et un brief décrivant "
-    "ce qu'elle doit contenir. Tu produis EXCLUSIVEMENT un objet JSON valide."
-)
+def _system_prompt_derivation() -> str:
+    return (
+        "You are HERMION, an expert in responding to public tenders. You analyse "
+        "how a company structures its responses and extract a reusable drafting "
+        "workflow from it: an ordered list of sections, each with a short title "
+        f"in {settings.pythia_langue_sortie} and a brief describing what it must "
+        "contain. You output ONLY a valid JSON object."
+    )
 
 
 async def deriver_workflow(*, mode: str, contenu: str) -> WorkflowReponse:
@@ -143,54 +145,55 @@ async def deriver_workflow(*, mode: str, contenu: str) -> WorkflowReponse:
     texte = (contenu or "").strip()
     if not texte:
         raise pythia.ErreurPythia(
-            "Contenu vide — fournis un workflow ou des réponses exemples."
+            "Empty content — provide a workflow or example responses."
         )
 
     if mode == "exemples":
         source = "ia_exemples"
         consigne_mode = (
-            "Ci-dessous, une ou plusieurs réponses à appels d'offre déjà "
-            "rédigées par l'utilisateur. Déduis-en la trame commune réutilisable "
-            "(les sections récurrentes, leur ordre, leur rôle)."
+            "Below are one or more tender responses already written by the user. "
+            "Infer the common reusable outline from them (the recurring sections, "
+            "their order, their role)."
         )
     else:
         source = "ia_workflow"
         consigne_mode = (
-            "Ci-dessous, la description libre par l'utilisateur de la manière "
-            "dont il veut structurer ses réponses. Formalise-la en workflow."
+            "Below is the user's free-form description of how they want to "
+            "structure their responses. Turn it into a workflow."
         )
 
+    langue = settings.pythia_langue_sortie
     prompt = (
         f"{consigne_mode}\n"
         "\n"
-        "Réponds en JSON strict, sans texte autour, sous la forme :\n"
+        "Answer in strict JSON, with no surrounding text, in the form:\n"
         '  {"sections": [{"titre": "...", "brief": "...", '
         '"longueur_cible": 300}], "consignes_globales": "..."}\n'
         "\n"
-        "Règles :\n"
-        f"  - Entre 3 et {MAX_SECTIONS} sections, dans l'ordre du document.\n"
-        "  - 'titre' : 3 à 8 mots, en français, sans numérotation.\n"
-        "  - 'brief' : 1 à 3 phrases en français décrivant le contenu attendu.\n"
-        "  - 'longueur_cible' : entier (mots) ou null si non pertinent.\n"
-        "  - 'consignes_globales' : ton, style, mentions obligatoires communes "
-        "à toutes les sections (chaîne, éventuellement vide).\n"
+        "Rules:\n"
+        f"  - Between 3 and {MAX_SECTIONS} sections, in document order.\n"
+        f"  - 'titre': 3 to 8 words, in {langue}, no numbering.\n"
+        f"  - 'brief': 1 to 3 sentences in {langue} describing the expected content.\n"
+        "  - 'longueur_cible': integer (words) or null if not relevant.\n"
+        "  - 'consignes_globales': tone, style, mandatory statements shared by "
+        "all sections (string, possibly empty).\n"
         "\n"
-        "=== ENTRÉE UTILISATEUR ===\n"
+        "=== USER INPUT ===\n"
         f"{texte}\n"
-        "=== FIN ENTRÉE ==="
+        "=== END OF INPUT ==="
     )
 
     reponse = await pythia.generer(
-        prompt, system=SYSTEM_PROMPT_DERIVATION, format_json=True
+        prompt, system=_system_prompt_derivation(), format_json=True
     )
     payload = pythia.parser_json_sortie(reponse.texte)
     if not isinstance(payload, dict):
-        raise pythia.ErreurPythia("Réponse PYTHIA n'est pas un objet JSON")
+        raise pythia.ErreurPythia("PYTHIA response is not a JSON object")
 
     workflow = _workflow_depuis_dict(payload, source=source)
     if not workflow.configure:
         raise pythia.ErreurPythia(
-            "PYTHIA n'a renvoyé aucune section exploitable."
+            "PYTHIA returned no usable section."
         )
     return _normaliser(workflow)
 

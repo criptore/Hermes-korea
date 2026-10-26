@@ -151,7 +151,7 @@ async def telecharger_documents(
 ) -> TelechargementDocumentsResponse:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     erreurs: list[str] = []
     try:
@@ -165,7 +165,7 @@ async def telecharger_documents(
         _journaliser(
             session,
             niveau=NiveauLog.ERROR,
-            message=f"Téléchargement documents AO {ao_id} impossible : {exc}",
+            message=f"Document download for tender {ao_id} failed: {exc}",
             appel_offre_id=ao_id,
         )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -174,7 +174,7 @@ async def telecharger_documents(
         _journaliser(
             session,
             niveau=NiveauLog.WARNING,
-            message=f"Téléchargement document AO {ao_id} en échec : {erreur}",
+            message=f"Document download for tender {ao_id} failed: {erreur}",
             appel_offre_id=ao_id,
         )
     for resultat in resultats:
@@ -182,7 +182,7 @@ async def telecharger_documents(
             session,
             niveau=NiveauLog.INFO,
             message=(
-                f"Document {'téléchargé' if resultat.nouveau else 'déjà présent'} : "
+                f"Document {'downloaded' if resultat.nouveau else 'already present'}: "
                 f"{resultat.document.nom_fichier}"
             ),
             appel_offre_id=ao_id,
@@ -203,7 +203,7 @@ def extraire_un_document(
 ) -> ExtractionDocumentResponse:
     document = session.get(Document, document_id)
     if document is None:
-        raise HTTPException(status_code=404, detail="Document introuvable")
+        raise HTTPException(status_code=404, detail="Document not found")
     return _extraire_et_persister(session, document)
 
 
@@ -214,7 +214,7 @@ def extraire_documents_ao(
 ) -> ExtractionAOResponse:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     documents = session.exec(
         select(Document).where(Document.appel_offre_id == ao_id).order_by(Document.id)
@@ -262,7 +262,7 @@ def _extraire_et_persister(
         _journaliser(
             session,
             niveau=NiveauLog.ERROR,
-            message=f"Extraction document {document.id} impossible : {exc}",
+            message=f"Extraction of document {document.id} failed: {exc}",
             appel_offre_id=document.appel_offre_id,
         )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -278,8 +278,8 @@ def _extraire_et_persister(
         session,
         niveau=NiveauLog.INFO,
         message=(
-            f"Extraction document {document.id} : "
-            f"{len(extraction.texte)} caractères extraits"
+            f"Extraction of document {document.id}: "
+            f"{len(extraction.texte)} characters extracted"
         ),
         appel_offre_id=document.appel_offre_id,
     )
@@ -287,7 +287,7 @@ def _extraire_et_persister(
         _journaliser(
             session,
             niveau=NiveauLog.WARNING,
-            message=f"Extraction document {document.id} incomplète : {avertissement}",
+            message=f"Extraction of document {document.id} incomplete: {avertissement}",
             appel_offre_id=document.appel_offre_id,
         )
 
@@ -309,7 +309,7 @@ async def analyser_appel_offre(
 ) -> AnalyseResponse:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     rapport_extraction = await extraire_documents_appel_offre_async(
         session, ao, best_effort=True
@@ -319,9 +319,9 @@ async def analyser_appel_offre(
             session,
             niveau=NiveauLog.INFO,
             message=(
-                f"Pré-analyse AO {ao_id} : "
-                f"{rapport_extraction.documents_traites} documents extraits, "
-                f"{rapport_extraction.caracteres_extraits} caractères"
+                f"Pre-analysis of tender {ao_id}: "
+                f"{rapport_extraction.documents_traites} documents extracted, "
+                f"{rapport_extraction.caracteres_extraits} characters"
             ),
             appel_offre_id=ao_id,
         )
@@ -329,14 +329,14 @@ async def analyser_appel_offre(
         _journaliser(
             session,
             niveau=NiveauLog.WARNING,
-            message=f"Pré-analyse AO {ao_id} : extraction ignorée — {erreur}",
+            message=f"Pre-analysis of tender {ao_id}: extraction skipped — {erreur}",
             appel_offre_id=ao_id,
         )
     for avertissement in rapport_extraction.avertissements:
         _journaliser(
             session,
             niveau=NiveauLog.WARNING,
-            message=f"Pré-analyse AO {ao_id} : extraction incomplète — {avertissement}",
+            message=f"Pre-analysis of tender {ao_id}: extraction incomplete — {avertissement}",
             appel_offre_id=ao_id,
         )
 
@@ -381,7 +381,7 @@ def lire_composite(session: SessionDep) -> CompositeIO:
 @router.put("/composite", response_model=CompositeIO)
 def ecrire_composite(payload: CompositeIO, session: SessionDep) -> CompositeIO:
     if payload.poids_pythia + payload.poids_laya + payload.poids_pertinence == 0:
-        raise HTTPException(status_code=422, detail="Au moins un poids doit être non nul")
+        raise HTTPException(status_code=422, detail="At least one weight must be non-zero")
     enregistrer_composite(session, ConfigComposite(**payload.model_dump()))
     return payload
 
@@ -429,7 +429,7 @@ def lire_analyse_ao(
 ) -> AnalyseRead:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     analyse = session.exec(
         select(AnalyseKrinos)
@@ -437,7 +437,7 @@ def lire_analyse_ao(
         .order_by(AnalyseKrinos.cree_le.desc())
     ).first()
     if analyse is None:
-        raise HTTPException(status_code=404, detail="Aucune analyse pour cet appel d'offre")
+        raise HTTPException(status_code=404, detail="No analysis for this tender")
     return _analyse_read(analyse, session)
 
 
@@ -448,7 +448,7 @@ def recalculer_score_ao(
 ) -> AnalyseRead:
     ao = session.get(AppelOffre, ao_id)
     if ao is None:
-        raise HTTPException(status_code=404, detail="Appel d'offre introuvable")
+        raise HTTPException(status_code=404, detail="Tender not found")
 
     analyse = session.exec(
         select(AnalyseKrinos)
@@ -456,13 +456,13 @@ def recalculer_score_ao(
         .order_by(AnalyseKrinos.cree_le.desc())
     ).first()
     if analyse is None:
-        raise HTTPException(status_code=404, detail="Aucune analyse pour cet appel d'offre")
+        raise HTTPException(status_code=404, detail="No analysis for this tender")
 
     scores = _scores_dimensions(analyse)
     if not scores:
         raise HTTPException(
             status_code=409,
-            detail="Cette analyse ne contient pas de scores par dimension",
+            detail="This analysis has no per-dimension scores",
         )
 
     analyse.score = calculer_score_final(scores, charger_ponderation(session))

@@ -60,21 +60,21 @@ export function markOnboardingDone(): void {
 }
 
 export function getProfileDisplayName(profile: UserProfile): string {
-  const firstInitial = profile.firstName.trim().charAt(0).toLocaleUpperCase("fr-FR");
+  const firstInitial = profile.firstName.trim().charAt(0).toLocaleUpperCase("en-GB");
   return `${firstInitial}. ${profile.lastName.trim()}`;
 }
 
 export function getProfileAvatarLetter(profile: UserProfile): string {
-  return profile.lastName.trim().charAt(0).toLocaleUpperCase("fr-FR") || "?";
+  return profile.lastName.trim().charAt(0).toLocaleUpperCase("en-GB") || "?";
 }
 
 export function getHermionUserContext(profile: UserProfile): string {
   return [
     `Utilisateur: ${profile.firstName} ${profile.lastName}`,
     profile.email ? `Email: ${profile.email}` : "",
-    profile.entreprise ? `Entreprise: ${profile.entreprise}` : "",
-    profile.activite ? `Activité: ${profile.activite}` : "",
-    profile.infosUtiles ? `Infos: ${profile.infosUtiles}` : "",
+    profile.entreprise ? `Company: ${profile.entreprise}` : "",
+    profile.activite ? `Business activity: ${profile.activite}` : "",
+    profile.infosUtiles ? `Notes: ${profile.infosUtiles}` : "",
   ]
     .filter(Boolean)
     .join("\n");

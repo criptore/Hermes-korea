@@ -197,8 +197,8 @@ function Coque() {
     } catch (error) {
       setToast({
         title: "ARGOS",
-        app: "Pause impossible",
-        msg: error instanceof Error ? error.message : "Le planificateur ARGOS ne répond pas.",
+        app: "Could not pause",
+        msg: error instanceof Error ? error.message : "The ARGOS scheduler is not responding.",
         agent: "argos",
       });
     }
@@ -219,8 +219,8 @@ function Coque() {
     setAgents((a) => ({ ...a, argos: "running", krinos: "running" }));
     setToast({
       title: "ARGOS",
-      app: "Cycle de collecte lancé",
-      msg: "Collecte réelle des scrapers ARGOS enregistrés — résultats dans quelques instants.",
+      app: "Collection cycle started",
+      msg: "Running the registered ARGOS scrapers — results in a few moments.",
       agent: "argos",
     });
     try {
@@ -231,16 +231,16 @@ function Coque() {
       setAgents((a) => ({ ...a, argos: "active", krinos: "active" }));
       void rafraichirScheduler();
       const filtres = result.ao_filtres
-        ? ` · ${result.ao_filtres} filtrés (hors critères)`
+        ? ` · ${result.ao_filtres} filtered out (outside criteria)`
         : "";
       const pipelineMsg = pipeline.actif
-        ? ` · ${pipeline.ao_analyses} analysés · ${pipeline.ao_rediges} réponses générées`
-        : " · pipeline autonome désactivé";
-      const echecs = pipeline.ao_echecs ? ` · ${pipeline.ao_echecs} échecs pipeline` : "";
+        ? ` · ${pipeline.ao_analyses} analysed · ${pipeline.ao_rediges} responses drafted`
+        : " · autonomous pipeline disabled";
+      const echecs = pipeline.ao_echecs ? ` · ${pipeline.ao_echecs} pipeline failures` : "";
       setToast({
         title: "ARGOS",
-        app: "Cycle terminé",
-        msg: `${result.ao_nouveaux} nouveaux AO · ${result.ao_trouves} trouvés · ${result.ao_dedoublonnes} dédoublonnés${filtres}${pipelineMsg}${echecs}.`,
+        app: "Cycle complete",
+        msg: `${result.ao_nouveaux} new tenders · ${result.ao_trouves} found · ${result.ao_dedoublonnes} duplicates merged${filtres}${pipelineMsg}${echecs}.`,
         agent: "argos",
       });
     } catch (error) {
@@ -248,8 +248,8 @@ function Coque() {
       setAgents((a) => ({ ...a, argos: "inactive", krinos: "active" }));
       setToast({
         title: "ARGOS",
-        app: "Cycle en échec",
-        msg: error instanceof Error ? error.message : "Erreur inconnue pendant la collecte.",
+        app: "Cycle failed",
+        msg: error instanceof Error ? error.message : "Unknown error during collection.",
         agent: "argos",
       });
     }
@@ -313,7 +313,7 @@ function Coque() {
               <span className="loading-banner__icon" />
               <span>
                 <strong style={{ color: "var(--argos)", letterSpacing: "0.08em" }}>HERMES</strong>{" "}
-                Le backend démarre ou est injoignable — nouvelle tentative en cours…
+                The backend is starting or unreachable — retrying…
               </span>
             </motion.div>
           )}
@@ -369,8 +369,8 @@ function Coque() {
                         setProfile(saveUserProfile(nextProfile));
                         setToast({
                           title: "HERMION",
-                          app: "Profil utilisateur",
-                          msg: "Identité enregistrée. HERMION utilisera ces informations dans les réponses générées.",
+                          app: "User profile",
+                          msg: "Identity saved. HERMION will use this information in drafted responses.",
                           agent: "hermion",
                         });
                       }}
@@ -393,8 +393,8 @@ function Coque() {
             setOnboardingDone(true);
             setToast({
               title: "HERMES",
-              app: "Onboarding terminé",
-              msg: `Bienvenue ${nextProfile.firstName}. Tu peux lancer ARGOS dès maintenant.`,
+              app: "Onboarding complete",
+              msg: `Welcome, ${nextProfile.firstName}. You can run ARGOS right away.`,
               agent: "argos",
             });
           }}
@@ -428,18 +428,18 @@ function EmptyView({
         <HermesMark size={56} color="#C8A951" />
       </motion.div>
       <motion.h2 className="empty__title" variants={VARIANTES_ELEMENT}>
-        Aucun appel d'offre collecté
+        No tenders collected yet
       </motion.h2>
       <motion.p className="empty__desc" variants={VARIANTES_ELEMENT}>
-        HERMES est prêt. Configurez au moins un portail dans les paramètres puis lancez
-        votre premier cycle ARGOS — les AO pertinents apparaîtront ici.
+        HERMES is ready. Configure at least one portal in Settings, then run your
+        first ARGOS cycle — relevant tenders will show up here.
       </motion.p>
       <motion.div style={{ display: "flex", gap: 10 }} variants={VARIANTES_ELEMENT}>
         <button className="btn btn--gold" onClick={onStart}>
-          <Icon.refresh size={13} /> Lancer un premier cycle ARGOS
+          <Icon.refresh size={13} /> Run a first ARGOS cycle
         </button>
         <button className="btn btn--ghost" onClick={onConfigure}>
-          <Icon.settings size={13} /> Configurer les portails
+          <Icon.settings size={13} /> Configure portals
         </button>
       </motion.div>
 
@@ -453,7 +453,7 @@ function EmptyView({
 /** Squelette affiché pendant le chargement d'une vue (plutôt qu'un écran vide). */
 function SqueletteVue() {
   return (
-    <div className="squelette-vue" aria-busy="true" aria-label="Chargement">
+    <div className="squelette-vue" aria-busy="true" aria-label="Loading">
       <span className="skel" style={{ width: 220, height: 16, marginBottom: 22 }} />
       {[0, 1, 2, 3].map((i) => (
         <div className="skeleton-card" key={i}>

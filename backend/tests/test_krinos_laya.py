@@ -272,7 +272,7 @@ def test_panne_laya_transparente_analyse_locale_conservee(monkeypatch):
     with Session(get_engine()) as s:
         assert s.get(AppelOffre, ao_id).statut == StatutAO.ANALYSE
         logs = [m.message for m in s.exec(select(LogAgent)).all()]
-    assert any("Laya ignoré" in m for m in logs)
+    assert any("Laya skipped" in m for m in logs)
 
 
 def test_laya_inactif_ne_change_rien(monkeypatch):

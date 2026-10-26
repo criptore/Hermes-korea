@@ -37,11 +37,11 @@ export function Sidebar({
   pendingValidationCount,
 }: Props) {
   const items: Item[] = [
-    { id: "accueil",   label: "Accueil",        icon: Icon.home,     count: null },
-    { id: "tenders",   label: "Appels d'offre", icon: Icon.document, count: tenderCount },
-    { id: "responses", label: "Réponses",       icon: Icon.reply,    count: pendingValidationCount },
+    { id: "accueil",   label: "Home",           icon: Icon.home,     count: null },
+    { id: "tenders",   label: "Tenders",        icon: Icon.document, count: tenderCount },
+    { id: "responses", label: "Responses",      icon: Icon.reply,    count: pendingValidationCount },
     { id: "journal",   label: "Journal",        icon: Icon.inbox,    count: null },
-    { id: "settings",  label: "Paramètres",     icon: Icon.settings, count: null },
+    { id: "settings",  label: "Settings",       icon: Icon.settings, count: null },
   ];
 
   return (
@@ -52,7 +52,7 @@ export function Sidebar({
         </div>
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">HERMES</span>
-          <span className="sidebar__brand-sub">Veille · Réponse</span>
+          <span className="sidebar__brand-sub">Watch · Respond</span>
         </div>
       </div>
 
