@@ -94,6 +94,12 @@ if [[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
   case "$ARCH" in arm64) ARCH_TAURI=aarch64 ;; *) ARCH_TAURI="$ARCH" ;; esac
   ARCHIVE="$SORTIE/HERMES_${VERSION}_${ARCH_TAURI}.app.tar.gz"
   info "Creating the signed update archive"
+  # Certains formulaires refusent les « = » finaux du base64 : on retire les
+  # blancs et on rétablit le padding avant que Tauri ne décode la clé.
+  CLE="${TAURI_SIGNING_PRIVATE_KEY//[[:space:]]/}"
+  while (( ${#CLE} % 4 )); do CLE+="="; done
+  (( ${#CLE} == ${#TAURI_SIGNING_PRIVATE_KEY} )) || ok "Signing key padding restored"
+  export TAURI_SIGNING_PRIVATE_KEY="$CLE"
   rm -f "$ARCHIVE" "$ARCHIVE.sig"
   COPYFILE_DISABLE=1 tar -czf "$ARCHIVE" -C "$(dirname "$APP")" HERMES.app
   (cd "$FRONTEND" && npm run --silent tauri -- signer sign "$ARCHIVE" >/dev/null)
