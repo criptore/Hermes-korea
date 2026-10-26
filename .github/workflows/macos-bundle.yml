@@ -110,17 +110,20 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'PY'
-          import datetime, json, os, pathlib
+          import datetime, json, os, pathlib, re
           tag = os.environ["TAG"]
           base = f"https://github.com/{os.environ['REPO']}/releases/download/{tag}"
           plateformes = {}
           for sig in sorted(pathlib.Path("dist").glob("*.app.tar.gz.sig")):
               archive = sig.name[: -len(".sig")]
-              arch = archive.rsplit("_", 1)[1].split(".", 1)[0]   # aarch64 | x86_64
+              # HERMES_<version>_<arch>.app.tar.gz, arch = aarch64 | x86_64 (contient « _ »)
+              arch = re.fullmatch(r"HERMES_[^_]+_(.+)\.app\.tar\.gz", archive).group(1)
               plateformes[f"darwin-{arch}"] = {
                   "signature": sig.read_text().strip(),
                   "url": f"{base}/{archive}",
               }
+          attendues = {"darwin-aarch64", "darwin-x86_64"}
+          assert set(plateformes) <= attendues, f"plateformes inattendues : {plateformes.keys()}"
           if not plateformes:
               print("No signed update archive: latest.json not published")
               raise SystemExit(0)
@@ -143,6 +146,8 @@ jobs:
             dist/*.app.tar.gz
             dist/latest.json
           fail_on_unmatched_files: false
+          # Republier un tag remplace les fichiers (ex. latest.json corrigé).
+          overwrite_files: true
           body: |
             ## HERMES ${{ env.TAG }} — macOS
 
