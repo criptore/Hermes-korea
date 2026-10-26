@@ -131,7 +131,9 @@ data is sent.
    `tauri.conf.json`. Losing the private key means installed apps can no longer
    update (a new key needs a manual DMG install once).
 2. `./scripts/sync-version.sh X.Y.Z`, commit, PR, merge.
-3. `git tag vX.Y.Z && git push origin vX.Y.Z` — the *macOS bundle* workflow
+3. `git tag vX.Y.Z && git push origin vX.Y.Z` — or run the *macOS bundle*
+   workflow manually (*Actions → macOS bundle → Run workflow*) on `main` with
+   `release_tag` = `vX.Y.Z` — the *macOS bundle* workflow
    builds both architectures, signs the update archives and publishes the DMGs,
    the archives and `latest.json` in the GitHub Release.
 
