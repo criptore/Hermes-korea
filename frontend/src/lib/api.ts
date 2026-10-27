@@ -620,6 +620,17 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(portail),
     }),
+  // Clé/identifiants d'un portail, chiffrés côté backend (jamais relus en clair).
+  enregistrerCredentialsPortail: (nom: string, credentials: Record<string, string>) =>
+    fetchJson<{ message: string }>(
+      `/argos/portails/${encodeURIComponent(nom)}/credentials`,
+      { method: "PUT", body: JSON.stringify({ credentials }) },
+    ),
+  supprimerCredentialsPortail: (nom: string) =>
+    fetchJson<{ message: string }>(
+      `/argos/portails/${encodeURIComponent(nom)}/credentials`,
+      { method: "DELETE" },
+    ),
   listerAO: (statut?: string, signal?: AbortSignal) =>
     fetchJson<AppelsOffrePage>(
       `/appels-offre${statut ? `?statut=${encodeURIComponent(statut)}` : ""}`,

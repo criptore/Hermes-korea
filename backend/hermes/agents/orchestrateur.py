@@ -51,8 +51,8 @@ SEUIL_MIN = 0.0
 SEUIL_MAX = 100.0
 MAX_PAR_CYCLE_PLAFOND = 50
 
-# Verrou global : un seul pipeline à la fois dans le process. Les jobs BOAMP et
-# TED (et `POST /orchestration/traiter`) sélectionnent les mêmes AO ; sans lui,
+# Verrou global : un seul pipeline à la fois dans le process. Les jobs KONEPS et
+# Banque mondiale (et `POST /orchestration/traiter`) sélectionnent les mêmes AO ; sans lui,
 # analyses KRINOS et réponses HERMION seraient produites en double (#13).
 # Jobs planifiés : ils attendent leur tour. API manuelle : 409 (voir api/).
 _VERROU_PIPELINE = asyncio.Lock()

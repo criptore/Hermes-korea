@@ -134,9 +134,56 @@ PROFIL_TED = ProfilCapacites(
 )
 
 
+PROFIL_KONEPS = ProfilCapacites(
+    portail="koneps",
+    filtrage_serveur=True,
+    # OpenAPI data.go.kr (opérations `…PPSSrch`) : titre de l'avis (une requête
+    # par mot-clé), nature (une opération par nature) et fenêtre de dates.
+    champs_filtrables=("bidNtceNm", "inqryBgnDt", "inqryEndDt"),
+    champs_retournes=(
+        "bidNtceNo",
+        "bidNtceOrd",
+        "bidNtceNm",
+        "ntceInsttNm",
+        "dminsttNm",
+        "bidNtceDt",
+        "bidClseDt",
+        "asignBdgtAmt",
+        "presmptPrce",
+        "bidNtceDtlUrl",
+        "ntceSpecDocUrl1..10",
+    ),
+    pagination=True,
+    # Pièces du dossier publiées avec l'avis (`ntceSpecDocUrl1..10`).
+    liens_documents=True,
+)
+
+PROFIL_BANQUE_MONDIALE = ProfilCapacites(
+    portail="banque_mondiale",
+    filtrage_serveur=True,
+    # API `procnotices` : pays du projet ; mots-clés filtrés côté client.
+    champs_filtrables=("project_ctry_code",),
+    champs_retournes=(
+        "id",
+        "notice_type",
+        "bid_description",
+        "project_name",
+        "project_ctry_code",
+        "agency_name",
+        "submission_date",
+        "submission_deadline_date",
+        "bid_estimate_amount",
+        "bid_currency_code",
+    ),
+    pagination=True,
+    liens_documents=False,
+)
+
+# Portails actifs (marchés coréens et asiatiques). BOAMP et TED restent
+# déclarés ci-dessus pour les modules historiques mais ne sont plus collectés.
 _PROFILS: dict[str, ProfilCapacites] = {
-    PROFIL_BOAMP.portail: PROFIL_BOAMP,
-    PROFIL_TED.portail: PROFIL_TED,
+    PROFIL_KONEPS.portail: PROFIL_KONEPS,
+    PROFIL_BANQUE_MONDIALE.portail: PROFIL_BANQUE_MONDIALE,
 }
 
 

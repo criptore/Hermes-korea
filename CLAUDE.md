@@ -161,7 +161,7 @@ Les modèles sont stockés dans `D:\HermesDeps\ollama\models`.
   (UI, messages d'API, journaux des agents, prompts PYTHIA) depuis le passage
   de l'app en anglais ; la langue des textes générés suit
   `HERMES_PYTHIA_LANGUE_SORTIE` (défaut English), les mots-clés de veille
-  celle des portails (`HERMES_LANGUE_PORTAILS`, défaut French).
+  celle des portails (`HERMES_LANGUE_PORTAILS`, défaut « Korean and English »).
 - Pour les relations SQLModel : utiliser `List` (typing) plutôt que `list` natif
   pour garder l'introspection SQLAlchemy heureuse.
 
@@ -218,7 +218,7 @@ Définies dans `backend/hermes/db/models.py`.
 
 | Table | Rôle |
 |-------|------|
-| `portails` | Sources de scraping (BOAMP, TED, achatpublic, etc.) |
+| `portails` | Sources de scraping (KONEPS / 나라장터, Banque mondiale Asie — voir `docs/portails-asie.md`) |
 | `appels_offre` | Table centrale — un AO détecté |
 | `documents` | Fichiers téléchargés (PDF/xlsx/html) liés à un AO |
 | `analyses_krinos` | Résumés + score 0-100 + tags par AO |

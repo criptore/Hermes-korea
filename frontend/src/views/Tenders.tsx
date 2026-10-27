@@ -40,7 +40,7 @@ export function Tenders({ isLoading, refreshKey, onCountChange, onToast }: Props
   const [minScore, setMinScore] = useState(0);
   const [portal, setPortal] = useState("all");
   const [tag, setTag] = useState("all");
-  // Vue « Hors filtre » : AO écartés par les filtres métier ou non-appels TED
+  // Vue « Hors filtre » : AO écartés par les filtres métier (ou non-appels TED historiques)
   // (masqués par défaut côté API), réintégrables via « Marquer à répondre ».
   const [horsFiltre, setHorsFiltre] = useState(false);
   const champRecherche = useRef<HTMLInputElement>(null);
@@ -329,9 +329,11 @@ function mapAppelOffre(ao: AppelOffre): Tender {
     id: String(ao.id),
     title: ao.titre,
     issuer: ao.emetteur ?? "Issuer not specified",
-    portal:
-      ao.portail_nom?.toUpperCase() ??
-      (ao.portail_id ? `Portal #${ao.portail_id}` : "Direct source"),
+    portal: ao.portail_nom
+      ? (LIBELLES_PORTAILS[ao.portail_nom] ?? ao.portail_nom.toUpperCase())
+      : ao.portail_id
+        ? `Portal #${ao.portail_id}`
+        : "Direct source",
     deadline: ao.date_limite,
     budget: formatBudget(ao.budget_estime, ao.devise),
     reference: ao.reference_externe ?? `AO-${ao.id}`,
@@ -410,6 +412,15 @@ function DocumentsBadge({ tender }: { tender: Tender }) {
     </span>
   );
 }
+
+const LIBELLES_PORTAILS: Record<string, string> = {
+  koneps: "KONEPS",
+  banque_mondiale: "WORLD BANK",
+};
+
+// Historique DECP : open data des marchés français, sans objet pour les
+// portails coréens / asiatiques.
+const PORTAILS_DECP = new Set(["BOAMP", "TED"]);
 
 function formatBudget(value: number | null, devise: string): string {
   if (value === null) return "Budget not specified";
@@ -634,7 +645,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
     }
   };
 
-  // Télécharge en local les documents publics détectés (TED HTML/PDF/XML,
+  // Télécharge en local les documents publics détectés (pièces KONEPS, anciens liens TED,
   // sinon url_source). Best-effort côté backend ; on remonte le bilan.
   const telechargerDce = async () => {
     setDceEnCours(true);
@@ -769,7 +780,7 @@ function TenderPanel({ tender, onClose, onChanged, onToast }: PanelProps) {
           </dl>
         </div>
 
-        <ConcurrenceDecp aoId={Number(tender.id)} />
+        {PORTAILS_DECP.has(tender.portal) && <ConcurrenceDecp aoId={Number(tender.id)} />}
 
         <div className="tender-panel__section">
           <div className="tender-panel__section-title">Points of attention</div>

@@ -262,8 +262,19 @@ function UserProfileSection({
 }
 
 const SCRAPER_URLS: Record<string, string> = {
-  boamp: "https://www.boamp.fr",
-  ted: "https://ted.europa.eu",
+  koneps: "https://www.g2b.go.kr",
+  banque_mondiale: "https://projects.worldbank.org",
+};
+
+const SCRAPER_LABELS: Record<string, { nom: string; detail: string }> = {
+  koneps: {
+    nom: "KONEPS · 나라장터",
+    detail: "Korean public procurement (Public Procurement Service), via the data.go.kr OpenAPI",
+  },
+  banque_mondiale: {
+    nom: "World Bank · Asia",
+    detail: "Tenders of World Bank–financed projects in Asian countries (public API, no key)",
+  },
 };
 
 function PortalsSection() {
@@ -296,6 +307,54 @@ function PortalsSection() {
   useEffect(() => {
     void load();
   }, []);
+
+  const [cleKoneps, setCleKoneps] = useState("");
+  const [infoCle, setInfoCle] = useState<string | null>(null);
+
+  // La ligne portail doit exister avant d'y attacher une clé chiffrée.
+  const assurerPortail = async (nom: string) => {
+    const existant = portails.find((p) => p.nom === nom);
+    if (existant) return existant;
+    return api.enregistrerPortailArgos(nom, {
+      url_base: SCRAPER_URLS[nom] ?? "",
+      actif: true,
+      frequence_minutes: 360,
+    });
+  };
+
+  const enregistrerCle = async () => {
+    const cle = cleKoneps.trim();
+    if (!cle) return;
+    setSaving("koneps");
+    setError(null);
+    setInfoCle(null);
+    try {
+      await assurerPortail("koneps");
+      await api.enregistrerCredentialsPortail("koneps", { service_key: cle });
+      setCleKoneps("");
+      setInfoCle("Service key saved (encrypted on this computer).");
+      setPortails(await api.listerPortailsArgos());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const supprimerCle = async () => {
+    setSaving("koneps");
+    setError(null);
+    setInfoCle(null);
+    try {
+      await api.supprimerCredentialsPortail("koneps");
+      setInfoCle("Service key removed.");
+      setPortails(await api.listerPortailsArgos());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(null);
+    }
+  };
 
   const toggle = async (nom: string, actif: boolean) => {
     const existant = portails.find((p) => p.nom === nom);
@@ -339,10 +398,17 @@ function PortalsSection() {
             return (
               <div className="portal-row" key={nom}>
                 <div>
-                  <div className="portal-row__name">{nom.toUpperCase()}</div>
+                  <div className="portal-row__name">
+                    {SCRAPER_LABELS[nom]?.nom ?? nom.toUpperCase()}
+                  </div>
                   <div className="portal-row__url">
                     {portail?.url_base ?? SCRAPER_URLS[nom] ?? "URL not configured"}
                   </div>
+                  {SCRAPER_LABELS[nom] && (
+                    <div className="settings-row__hint" style={{ marginTop: 2 }}>
+                      {SCRAPER_LABELS[nom].detail}
+                    </div>
+                  )}
                   {cap && (
                     <div
                       style={{
@@ -407,6 +473,52 @@ function PortalsSection() {
         </div>
       )}
 
+      {scrapers.includes("koneps") && (
+        <div className="settings-row">
+          <div>
+            <div className="settings-row__label">KONEPS service key (data.go.kr)</div>
+            <div className="settings-row__hint">
+              {portails.find((p) => p.nom === "koneps")?.credentials_configures
+                ? "Key configured. Paste a new one to replace it."
+                : "Required to collect KONEPS. Free: sign up on data.go.kr and request " +
+                  "access to the API “조달청_나라장터 입찰공고정보서비스”, then paste " +
+                  "the (decoding) service key here."}
+            </div>
+            {infoCle && (
+              <div className="settings-row__hint" style={{ color: "var(--fg-2)" }}>
+                {infoCle}
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              className="input"
+              type="password"
+              autoComplete="off"
+              placeholder="Service key"
+              value={cleKoneps}
+              onChange={(e) => setCleKoneps(e.target.value)}
+            />
+            <button
+              className="btn btn--gold"
+              disabled={!cleKoneps.trim() || saving === "koneps"}
+              onClick={() => void enregistrerCle()}
+            >
+              Save
+            </button>
+            {portails.find((p) => p.nom === "koneps")?.credentials_configures && (
+              <button
+                className="btn btn--ghost"
+                disabled={saving === "koneps"}
+                onClick={() => void supprimerCle()}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           marginTop: 14,
@@ -462,7 +574,7 @@ function FilteringSection() {
   const [excluded, setExcluded] = useState("");
   const [savedKeywords, setSavedKeywords] = useState("");
   const [savedExcluded, setSavedExcluded] = useState("");
-  // Critères avancés (filtrage serveur TED/BOAMP). Listes saisies en texte
+  // Critères avancés (filtrage serveur KONEPS / Banque mondiale). Listes saisies en texte
   // séparé par des virgules ; natures en cases à cocher ; dates en ISO.
   const [cpv, setCpv] = useState("");
   const [descripteurs, setDescripteurs] = useState("");
@@ -628,8 +740,8 @@ function FilteringSection() {
         ARGOS filters collected tenders with these keywords before storing them in
         MNEMOSYNE. A tender is kept if at least one include keyword appears in its
         title, subject or issuer, and no exclude keyword does. Matching ignores case
-        and accents. Keywords match the tender text, so use the portal's language
-        (French for BOAMP).
+        and accents. Keywords match the tender text, so write them in the portals'
+        languages: Korean for KONEPS, English for the World Bank.
       </p>
 
       {loading ? (
@@ -646,7 +758,7 @@ function FilteringSection() {
             <textarea
               className="response-comment-input"
               style={{ minHeight: 60 }}
-              placeholder="e.g. maintenance applicative, java, postgresql, audit"
+              placeholder="e.g. 정보시스템 유지보수, 보안 컨설팅, system maintenance, cybersecurity"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
             />
@@ -662,7 +774,7 @@ function FilteringSection() {
             <textarea
               className="response-comment-input"
               style={{ minHeight: 60 }}
-              placeholder="e.g. nettoyage, restauration, espaces verts"
+              placeholder="e.g. 청소, 조경, cleaning, catering"
               value={excluded}
               onChange={(e) => setExcluded(e.target.value)}
             />
@@ -679,9 +791,9 @@ function FilteringSection() {
               Advanced filters (server-side)
             </div>
             <div className="settings-row__hint" style={{ marginBottom: 14 }}>
-              Sent straight to the TED/BOAMP APIs to target collection. CPV and
-              country apply to TED; descriptors and departments apply to BOAMP;
-              contract type and dates apply to both.
+              Sent to the portal APIs to target collection. Contract type applies
+              to KONEPS (goods, services, works); countries apply to the World
+              Bank; dates apply to both.
             </div>
 
             <div className="settings-row">
@@ -706,65 +818,24 @@ function FilteringSection() {
               </div>
             </div>
 
-            <div className="settings-row">
-              <div>
-                <div className="settings-row__label">Codes CPV (TED)</div>
-                <div className="settings-row__hint">
-                  8-digit codes, comma-separated. e.g. 64200000
-                </div>
-              </div>
-              <input
-                className="input"
-                placeholder="e.g. 64200000, 72000000"
-                value={cpv}
-                onChange={(e) => setCpv(e.target.value)}
-              />
-            </div>
 
             <div className="settings-row">
               <div>
-                <div className="settings-row__label">Country / area (TED)</div>
+                <div className="settings-row__label">Countries (World Bank)</div>
                 <div className="settings-row__hint">
-                  ISO3 country codes, comma-separated. Default: FRA
+                  ISO3 codes of Asian countries, comma-separated. Default: all
+                  of Asia
                 </div>
               </div>
               <input
                 className="input"
-                placeholder="e.g. FRA, ESP"
+                placeholder="e.g. VNM, IDN, PHL, UZB"
                 value={pays}
                 onChange={(e) => setPays(e.target.value)}
               />
             </div>
 
-            <div className="settings-row">
-              <div>
-                <div className="settings-row__label">Descriptors (BOAMP)</div>
-                <div className="settings-row__hint">
-                  Business terms searched in BOAMP descriptors
-                </div>
-              </div>
-              <input
-                className="input"
-                placeholder="e.g. informatique, télécommunications"
-                value={descripteurs}
-                onChange={(e) => setDescripteurs(e.target.value)}
-              />
-            </div>
 
-            <div className="settings-row">
-              <div>
-                <div className="settings-row__label">Departments (BOAMP)</div>
-                <div className="settings-row__hint">
-                  Department codes, comma-separated
-                </div>
-              </div>
-              <input
-                className="input"
-                placeholder="e.g. 75, 92, 69"
-                value={departements}
-                onChange={(e) => setDepartements(e.target.value)}
-              />
-            </div>
 
             <div className="settings-row">
               <div>

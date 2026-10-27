@@ -1,6 +1,6 @@
 """Robustesse réseau partagée des scrapers ARGOS : retry/backoff.
 
-Mutualise la politique de tolérance aux pannes des scrapers HTTP (BOAMP, TED).
+Mutualise la politique de tolérance aux pannes des scrapers HTTP (KONEPS, Banque mondiale).
 Un échec réseau ponctuel — 429 (quota), 5xx (panne serveur), timeout — ne doit
 pas coûter un cycle de collecte entier : c'est critique quand la cadence est de
 seulement 2 collectes/jour (cf. veille LinkMobility).
