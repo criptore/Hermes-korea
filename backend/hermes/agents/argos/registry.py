@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from hermes.agents.argos.banque_mondiale import BanqueMondialeScraper
 from hermes.agents.argos.base import Scraper
-from hermes.agents.argos.boamp import BoampScraper
-from hermes.agents.argos.ted import TedScraper
+from hermes.agents.argos.koneps import KonepsScraper
 
 # Pour ajouter un portail : implémenter `Scraper` dans un nouveau fichier
 # puis l'enregistrer ici. Aucun import dynamique → exigence sécurité (pas de
 # chargement de code basé sur des données BDD).
+# Cible : commercial coréen — marchés publics coréens (KONEPS / 나라장터) et
+# projets financés par la Banque mondiale en Asie. Les scrapers français
+# (BOAMP, TED) ne sont plus enregistrés.
 _REGISTRE: dict[str, type[Scraper]] = {
-    BoampScraper.nom: BoampScraper,
-    TedScraper.nom: TedScraper,
+    KonepsScraper.nom: KonepsScraper,
+    BanqueMondialeScraper.nom: BanqueMondialeScraper,
 }
 
 

@@ -2,7 +2,9 @@
 
 Architecture :
 - `base.py`      : interface `Scraper` que chaque portail implémente.
-- `boamp.py`     : premier scraper (BOAMP — boamp.fr, portail public).
+- `koneps.py`    : KONEPS / 나라장터 (marchés publics coréens, OpenAPI data.go.kr).
+- `banque_mondiale.py` : avis Banque mondiale des projets en Asie (API publique).
+- `boamp.py`, `ted.py` : portails français historiques, plus enregistrés.
 - `playwright_auth.py` : base pour les portails privés avec authentification.
 - `runner.py`    : exécution d'un scraper, persistance MNEMOSYNE, gestion logs.
 - `scheduler.py` : APScheduler — planification automatique des collectes.

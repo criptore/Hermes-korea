@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 # Pagination des collectes (incrémental réalisé côté client).
-TAILLE_PAGE = 100  # plafond par requête des deux APIs (BOAMP, TED)
+TAILLE_PAGE = 100  # lignes par requête (KONEPS, Banque mondiale)
 MAX_PAGES = 10  # garde-fou : au plus 1000 avis par cycle et par portail
 # Recouvrement de sécurité : on pagine un peu au-delà de la dernière collecte
 # pour absorber l'imprécision des dates (jour) et un éventuel cycle raté.
@@ -202,7 +202,7 @@ class Scraper(ABC):
     d'AOCollecte et le runner s'occupe de la persistance.
     """
 
-    nom: str  # identifiant court ("boamp", "ted", …)
+    nom: str  # identifiant court ("koneps", "banque_mondiale", …)
     url_base: str
     # Vrai si la dernière collecte s'est arrêtée sur une erreur en cours de
     # pagination : les avis récupérés sont exploitables mais la fenêtre n'est

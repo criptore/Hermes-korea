@@ -15,20 +15,18 @@ type Props = {
 // Préset métier par défaut (déploiement mono-utilisateur : commercial
 // LinkMobility — CPaaS / messagerie mobile). Éditable à l'onboarding et dans
 // Paramètres. Centralisé ici pour être ajusté facilement si la cible change.
-// Termes choisis pour la précision (testés sur l'API BOAMP) : on évite les
-// mots génériques qui collisionnent avec le jargon administratif — ex.
-// « notification » seul matche « à compter de la notification du marché »,
-// « système d'alerte » matche « alerte incendie ».
+// Bilingue : coréen pour KONEPS (나라장터), anglais pour la Banque mondiale.
+// Termes précis plutôt que génériques — ex. on n'exclut pas « 공사 » (travaux),
+// qui figure aussi dans le nom des entreprises publiques (한국전력공사).
 const PRESET_INCLUS =
-  "SMS, SMS A2P, campagne SMS, envoi de SMS, notification SMS, alerte SMS, " +
-  "RCS, messagerie mobile, WhatsApp Business, messagerie instantanée, CPaaS, " +
-  "OTP, authentification forte, communication multicanale, omnicanal, " +
-  "rappel de rendez-vous, relation citoyen, engagement client";
+  "문자메시지, 문자 발송, 대량문자, 알림톡, 카카오 알림톡, SMS, RCS, " +
+  "메시징 서비스, 본인인증, OTP, 통합메시징, 모바일 메시지, " +
+  "SMS service, bulk SMS, mobile messaging, messaging platform, CPaaS, " +
+  "notification service, two-factor authentication";
 
 const PRESET_EXCLUS =
-  "téléphonie fixe, standard téléphonique, PABX, IPBX, fibre optique, câblage, " +
-  "infrastructure réseau, flotte mobile, téléphones mobiles, matériel informatique, " +
-  "nettoyage, espaces verts, restauration, travaux, voirie";
+  "청소, 조경, 급식, 건설공사, 광케이블, 통신장비, 전화기, " +
+  "cleaning, catering, landscaping, civil works, fibre optic cable";
 
 function parseMotsCles(value: string): string[] {
   return value
@@ -451,7 +449,7 @@ function StepFiltres({
           style={{ minHeight: 80 }}
           value={inclus}
           onChange={(e) => onInclus(e.target.value)}
-          placeholder="e.g. maintenance applicative, java, postgresql, audit cyber, AMO"
+          placeholder="e.g. 정보시스템 유지보수, 보안 컨설팅, system maintenance, cybersecurity"
           autoFocus
         />
       </div>
@@ -467,7 +465,7 @@ function StepFiltres({
           style={{ minHeight: 80 }}
           value={exclus}
           onChange={(e) => onExclus(e.target.value)}
-          placeholder="e.g. nettoyage, restauration, espaces verts, climatisation"
+          placeholder="e.g. 청소, 조경, cleaning, catering"
         />
       </div>
 
@@ -483,10 +481,10 @@ function StepFiltres({
         }}
       >
         Why this step is required: without a filter, ARGOS would collect every
-        BOAMP tender (more than 1,000 a day). With a few precise business
+        KONEPS tender (about 3,000 a day). With a few precise business
         keywords, you only review the ones that matter to you. Keywords match
-        the tender text, so write them in the portal's language (French for
-        BOAMP).
+        the tender text, so write them in Korean for KONEPS and in English for
+        the World Bank.
       </div>
 
       {suggestionMsg && (

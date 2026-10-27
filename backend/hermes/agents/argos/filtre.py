@@ -367,7 +367,9 @@ def _normaliser(texte: str | None) -> str:
         return ""
     decomp = unicodedata.normalize("NFKD", texte)
     sans_accents = "".join(c for c in decomp if not unicodedata.combining(c))
-    return sans_accents.casefold().strip()
+    # NFKD décompose aussi le hangul en jamos : on recompose (NFC) pour que les
+    # mots-clés coréens matchent par syllabes entières, pas à cheval sur deux.
+    return unicodedata.normalize("NFC", sans_accents).casefold().strip()
 
 
 def _est_acronyme_court(terme: str) -> bool:
@@ -378,7 +380,9 @@ def _est_acronyme_court(terme: str) -> bool:
     les mentions légales (« Registre du Commerce et des Sociétés ») et `SMS`
     matcherait à l'intérieur d'autres mots.
     """
-    return len(terme) <= 4 and terme.isalnum()
+    # ASCII seulement : un mot coréen court (« 보안 ») apparaît souvent collé à
+    # une particule ou dans un composé (« 정보보안 ») — sous-chaîne pour lui.
+    return len(terme) <= 4 and terme.isascii() and terme.isalnum()
 
 
 def _contient(cible: str, terme: str) -> bool:
@@ -404,10 +408,12 @@ def _system_prompt_suggestion() -> str:
     langue = settings.langue_portails
     return (
         "You are an expert in public tender monitoring. From a company profile, "
-        "you suggest the most relevant keywords to filter a feed of BOAMP tenders. "
-        f"Keywords must be short (1-3 words), business-specific, written in {langue} "
-        "(the language of the tender notices, so they match their text), with no "
-        "duplicates. You output ONLY a valid JSON object."
+        "you suggest the most relevant keywords to filter a feed of tenders from "
+        "KONEPS (나라장터, Korean public procurement, notices in Korean) and from "
+        "World Bank projects in Asia (notices in English). Keywords must be short "
+        f"(1-3 words), business-specific, written in {langue} (the language of the "
+        "tender notices, so they match their text), with no duplicates. You output "
+        "ONLY a valid JSON object."
     )
 
 
@@ -445,7 +451,8 @@ async def suggerer_mots_cles(
         f"  Details    : {infos.strip() or '(none)'}\n"
         "\n"
         f"Suggest between {nb_inclus[0]} and {nb_inclus[1]} INCLUDE keywords "
-        f"(to match in the title/subject/issuer of BOAMP tenders) and between "
+        f"(to match in the title/subject/issuer of KONEPS and World Bank tenders) "
+        f"and between "
         f"{nb_exclus[0]} and {nb_exclus[1]} EXCLUDE keywords (to automatically "
         "discard out-of-scope contracts). Keywords in "
         f"{langue}; the reasoning in {settings.pythia_langue_sortie}.\n"
@@ -455,13 +462,14 @@ async def suggerer_mots_cles(
         '"raisonnement": "1-2 sentences explaining your choice"}\n'
         "\n"
         "Tips:\n"
-        "  - 'inclus' must be precise business terms (e.g. "
-        "'maintenance applicative', 'audit cyber', 'AMO'), not generic ones.\n"
+        "  - 'inclus' must be precise business terms (e.g. '정보시스템 유지보수', "
+        "'information system maintenance', '보안 컨설팅', 'cybersecurity audit'), "
+        "not generic ones. Give each key term in Korean AND in English.\n"
         "  - 'exclus' covers contracts that are obviously out of scope "
-        "(e.g. for a software services firm: 'nettoyage', 'espaces verts', "
-        "'climatisation').\n"
-        "  - No ambiguous acronyms on their own (e.g. 'SI' → use 'système "
-        "information' or 'SI métier').\n"
+        "(e.g. for a software services firm: '청소', 'cleaning', '조경', "
+        "'landscaping').\n"
+        "  - No ambiguous acronyms on their own (e.g. 'SI' → use '시스템 통합' "
+        "or 'system integration').\n"
     )
 
     reponse = await pythia.generer(

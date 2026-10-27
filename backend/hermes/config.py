@@ -67,9 +67,10 @@ class Settings(BaseSettings):
     # Langue des textes produits par PYTHIA (résumés KRINOS, rédactions HERMION,
     # workflow, explications). Override : HERMES_PYTHIA_LANGUE_SORTIE=French…
     pythia_langue_sortie: str = "English"
-    # Langue des avis collectés par ARGOS (BOAMP/TED France) : les mots-clés de
-    # filtrage doivent être dans cette langue pour matcher le texte des AO.
-    langue_portails: str = "French"
+    # Langue des avis collectés par ARGOS (KONEPS en coréen, Banque mondiale en
+    # anglais) : les mots-clés de filtrage doivent être dans ces langues pour
+    # matcher le texte des AO.
+    langue_portails: str = "Korean and English"
     # Modèles que l'utilisateur peut choisir de télécharger, avec une taille
     # INDICATIVE en octets (aucun appel au registre Ollama : local-first).
     # Un nom hors liste est refusé, sauf `pythia_modele_libre` (option avancée).

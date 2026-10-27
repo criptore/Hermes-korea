@@ -11,7 +11,9 @@ from hermes.agents.argos.boamp import BoampScraper, _record_vers_ao
 from hermes.agents.argos.capabilities import (
     CHAMPS_BOAMP,
     CHAMPS_TED,
+    PROFIL_BANQUE_MONDIALE,
     PROFIL_BOAMP,
+    PROFIL_KONEPS,
     PROFIL_TED,
     profil_pour,
     tous_les_profils,
@@ -21,8 +23,11 @@ from hermes.agents.argos.ted import _FIELDS, TedScraper
 
 
 def test_profil_pour_connu_et_inconnu():
-    assert profil_pour("boamp") is PROFIL_BOAMP
-    assert profil_pour("ted") is PROFIL_TED
+    assert profil_pour("koneps") is PROFIL_KONEPS
+    assert profil_pour("banque_mondiale") is PROFIL_BANQUE_MONDIALE
+    # Portails français historiques : plus collectés, donc plus exposés.
+    assert profil_pour("boamp") is None
+    assert profil_pour("ted") is None
     assert profil_pour("inexistant") is None
 
 
@@ -69,9 +74,9 @@ def test_endpoint_capacites_renvoie_les_profils():
     assert r.status_code == 200
     data = r.json()
     portails = {item["portail"] for item in data}
-    assert {"boamp", "ted"} <= portails
+    assert portails == {"koneps", "banque_mondiale"}
 
-    ted = next(item for item in data if item["portail"] == "ted")
-    assert ted["liens_documents"] is True
-    assert ted["pagination"] is True
-    assert "notice-title" in ted["champs_filtrables"]
+    koneps = next(item for item in data if item["portail"] == "koneps")
+    assert koneps["liens_documents"] is True
+    assert koneps["pagination"] is True
+    assert "bidNtceNm" in koneps["champs_filtrables"]

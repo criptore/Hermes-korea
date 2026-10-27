@@ -200,7 +200,7 @@ def _creer_portails_publics_manquants(session: Session) -> None:
 
     Sans cette initialisation, une installation neuve démarre le scheduler sans
     aucun job ARGOS jusqu'au premier cycle manuel. La V1 attend au contraire
-    que BOAMP/TED soient collectés automatiquement dès le premier lancement.
+    que KONEPS et la Banque mondiale soient collectés automatiquement dès le premier lancement.
     """
     for nom in scrapers_disponibles():
         existe = session.exec(select(Portail.id).where(Portail.nom == nom)).first()

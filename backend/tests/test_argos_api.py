@@ -11,7 +11,7 @@ def test_endpoint_scrapers_liste():
     with TestClient(app) as client:
         r = client.get("/argos/scrapers")
         assert r.status_code == 200
-        assert "boamp" in r.json()["disponibles"]
+        assert r.json()["disponibles"] == ["banque_mondiale", "koneps"]
 
 
 def test_endpoint_portails_initialement_vide():
