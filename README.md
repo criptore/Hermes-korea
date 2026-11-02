@@ -101,7 +101,7 @@ started; an Ollama that was already running is left alone.
 
 ### AI analysis
 - Ollama/PYTHIA runs locally on `127.0.0.1:11434`.
-- Expected models: `qwen3:8b` and `nomic-embed-text`.
+- Expected model: `qwen3:8b` (one local LLM for all text tasks; `qwen3:4b` as a lighter fallback on 16 GB Macs).
 - On Joshua's Windows machine, the standalone Ollama and its models live in
   `D:\HermesDeps\ollama`. Heavy HERMES downloads stay on `D:` when the tool
   allows it (`HERMES_DEPS_DIR` or `-DepsRoot <path>` to use another drive).
