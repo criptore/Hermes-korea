@@ -160,8 +160,8 @@ async def test_collecte_une_requete_par_nature_et_mot_cle(monkeypatch):
 
     operations = {r.url.path.rsplit("/", 1)[-1] for r in requetes}
     assert operations == {
-        "getBidPblancListInfoServcPPSSrch",
-        "getBidPblancListInfoThngPPSSrch",
+        "getBidPblancListInfoServcPPSSrch02",
+        "getBidPblancListInfoThngPPSSrch02",
     }
     assert {r.url.params["bidNtceNm"] for r in requetes} == {"유지보수", "보안"}
     assert len(requetes) == 4
@@ -208,3 +208,18 @@ def test_filtre_mots_cles_coreens():
     assert not FiltreVeille(inclus=("용여",)).correspond(ao)
     nettoyage = item_vers_ao({**ITEM, "bidNtceNm": "청사 청소 용역"})
     assert not filtre.correspond(nettoyage)
+
+
+def test_fenetre_plafonnee_a_7_jours():
+    """Depuis le 10/11/2026, l'API refuse une période de recherche > 7 jours."""
+    from datetime import timedelta
+
+    s = koneps.KonepsScraper()
+    fin = datetime(2026, 11, 23, 12, 0, tzinfo=UTC)
+    s.maintenant = lambda: fin
+    s.depuis = fin - timedelta(days=30)
+    debut, _ = s._fenetre()
+    assert fin - debut == timedelta(days=7)
+    s.depuis = None
+    debut, _ = s._fenetre()
+    assert fin - debut == timedelta(days=7)

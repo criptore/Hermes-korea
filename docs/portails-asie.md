@@ -12,12 +12,12 @@ enregistrés : ils ne sont plus collectés ni affichés.
 
 ## KONEPS / 나라장터
 
-- Endpoint : `https://apis.data.go.kr/1230000/ad/BidPublicInfoService/`, une
-  opération par nature : `getBidPblancListInfoThngPPSSrch` (fournitures),
-  `…ServcPPSSrch` (services), `…CnstwkPPSSrch` (travaux). Le critère avancé
+- Endpoint : `https://apis.data.go.kr/1230000/ad/BidPublicInfoService02/`, une
+  opération par nature : `getBidPblancListInfoThngPPSSrch02` (fournitures),
+  `…ServcPPSSrch02` (services), `…CnstwkPPSSrch02` (travaux). Le critère avancé
   *Contract type* restreint les opérations interrogées.
 - Fenêtre : avis mis en ligne depuis la dernière collecte (marge 2 jours),
-  7 jours à la première collecte, 30 jours maximum (limite de l'API).
+  7 jours maximum (limite de l'API depuis le 10/11/2026, auparavant 1 mois).
 - Mots-clés inclus poussés au serveur (`bidNtceNm`, une requête par mot-clé,
   jusqu'à 10) ; au-delà, collecte non filtrée puis filtre local.
 - Référence : `bidNtceNo-bidNtceOrd` (un avis rectificatif a son propre ordre).

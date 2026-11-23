@@ -4,8 +4,8 @@ Source : OpenAPI officielle « 조달청_나라장터 입찰공고정보서비�
 le portail open data coréen <https://www.data.go.kr>.
 
 URL exploitée (une opération par nature de marché) :
-    GET https://apis.data.go.kr/1230000/ad/BidPublicInfoService/
-        getBidPblancListInfo{Thng|Servc|Cnstwk}PPSSrch
+    GET https://apis.data.go.kr/1230000/ad/BidPublicInfoService02/
+        getBidPblancListInfo{Thng|Servc|Cnstwk}PPSSrch02
 
 Caractéristiques :
 - API publique **gratuite** ; elle exige une clé de service (``serviceKey``)
@@ -14,7 +14,8 @@ Caractéristiques :
   (`portails.credentials_chiffres`, clé ``service_key``), ou fournie par
   ``HERMES_KONEPS_SERVICE_KEY``.
 - Requête par fenêtre de dates de mise en ligne (``inqryDiv=1``,
-  ``inqryBgnDt``/``inqryEndDt`` au format ``YYYYMMDDHHMM``, ≤ 1 mois).
+  ``inqryBgnDt``/``inqryEndDt`` au format ``YYYYMMDDHHMM``, ≤ 7 jours depuis
+  le 10/11/2026 — auparavant 1 mois).
 - Filtrage serveur : ``bidNtceNm`` (sous-chaîne du titre de l'avis), une
   requête par mot-clé inclus — c'est le rôle des opérations ``…PPSSrch``.
 - Réponse JSON ``{"response": {"header": {...}, "body": {"items": [...],
@@ -48,22 +49,24 @@ from hermes.agents.argos.base import (
 from hermes.agents.argos.capabilities import PROFIL_KONEPS
 from hermes.agents.argos.reseau import requeter_avec_retry
 
-API_BASE = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService"
+# Version « 02 » du service (les opérations sans suffixe ne sont plus publiées).
+API_BASE = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService02"
 
 # Nature canonique → (suffixe d'opération, libellé affiché en type de marché).
 OPERATIONS: dict[str, tuple[str, str]] = {
-    "fournitures": ("getBidPblancListInfoThngPPSSrch", "Goods"),
-    "services": ("getBidPblancListInfoServcPPSSrch", "Services"),
-    "travaux": ("getBidPblancListInfoCnstwkPPSSrch", "Works"),
+    "fournitures": ("getBidPblancListInfoThngPPSSrch02", "Goods"),
+    "services": ("getBidPblancListInfoServcPPSSrch02", "Services"),
+    "travaux": ("getBidPblancListInfoCnstwkPPSSrch02", "Works"),
 }
 
 KST = timezone(timedelta(hours=9), "KST")
 
-# Première collecte : on remonte une semaine (≈ 3 000 avis/jour sur KONEPS, le
-# filtre mots-clés serveur réduit fortement le volume). Fenêtre plafonnée à
-# 30 jours, limite documentée de l'API.
-FENETRE_INITIALE = timedelta(days=7)
-FENETRE_MAX = timedelta(days=30)
+# Fenêtre de requête plafonnée à 7 jours par l'API depuis le 10/11/2026
+# (auparavant 1 mois).
+# Première collecte : on remonte toute la fenêtre autorisée (≈ 3 000 avis/jour
+# sur KONEPS, le filtre mots-clés serveur réduit fortement le volume).
+FENETRE_MAX = timedelta(days=7)
+FENETRE_INITIALE = FENETRE_MAX
 
 # Au-delà, on ne pousse plus les mots-clés un par un (une requête chacun) :
 # collecte non filtrée, le filtre client du runner fait le tri.
