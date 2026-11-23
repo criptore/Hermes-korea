@@ -23,6 +23,9 @@ os.environ["HERMES_SCHEDULER_AUTO_START"] = "false"
 os.environ["HERMES_JUGE_LOCAL_ACTIF"] = "false"
 # Préchargement de démo : coupé par défaut (les tests dédiés l'appellent).
 os.environ["HERMES_DEMO_PRECHARGE"] = "false"
+# Budget / espacement Gemini : neutralisés (les tests dédiés les règlent).
+os.environ["HERMES_GEMINI_QUOTA_JOUR"] = "0"
+os.environ["HERMES_GEMINI_INTERVALLE_MIN_S"] = "0"
 # TestClient envoie `Host: testserver` : autorisé uniquement en test.
 os.environ["HERMES_HOTES_AUTORISES"] = '["127.0.0.1","localhost","testserver"]'
 

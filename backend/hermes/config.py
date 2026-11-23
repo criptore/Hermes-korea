@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     gemini_actif: bool = False
     gemini_modele: str = "gemini-3.5-flash"
     gemini_api_key: str = ""
+    # Budget d'appels Gemini par jour (remise à zéro à minuit, heure du Pacifique,
+    # comme les quotas Google). Offre gratuite : 20 requêtes/jour et 5/minute ; au-delà
+    # du budget, PYTHIA bascule directement sur le modèle local. 0 = illimité.
+    gemini_quota_jour: int = 18
+    # Écart minimal entre deux requêtes Gemini (s) : 5/minute en offre gratuite.
+    gemini_intervalle_min_s: float = 12.5
     # Calculé : clé fournie par l'environnement (prime sur celle en base).
     gemini_cle_env: bool = False
     # Qwen3 8B (q4) : tient entièrement dans 8 Go de VRAM (~72 t/s), bien meilleur
