@@ -41,44 +41,14 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  versions:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - shell: pwsh
-        run: ./scripts/sync-version.ps1 -Check
-
-  # Scripts shell macOS/Linux : syntaxe + cohérence des versions (port de sync-version.ps1).
+  # Scripts shell macOS : syntaxe + cohérence des versions. Plus de jobs Windows :
+  # HERMES Korea ne cible que macOS Apple Silicon.
   scripts-unix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: shellcheck -x scripts/*.sh scripts/lib/commun.sh
       - run: ./scripts/sync-version.sh --check
-
-  desktop:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      # tauri::generate_context! exige frontend/dist (frontendDist).
-      - name: Build frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: frontend/src-tauri
-      # Sans --locked : Cargo.lock ne contient pas encore win32job.
-      - name: cargo check
-        working-directory: frontend/src-tauri
-        run: cargo check
 
   desktop-macos:
     runs-on: macos-latest

@@ -27,7 +27,8 @@ override the defaults on both platforms.
    or `brew install ollama`. HERMES reuses the Ollama server if it is already
    running, otherwise it starts `ollama serve` itself and stops it on exit.
 2. Open `HERMES-<version>-macos-<arch>.dmg` and drag **HERMES** to
-   **Applications**. Pick `arm64` for Apple Silicon (M1…M4), `x86_64` for Intel.
+   **Applications**. Releases are published for Apple Silicon (`arm64`, M1 and later) only;
+   build locally on an Intel Mac if you need `x86_64`.
 3. First launch — the DMG is ad-hoc signed, not notarised by Apple, so
    Gatekeeper blocks it once:
    - macOS 14 and earlier: right-click (or Control-click) **HERMES** → **Open** →
