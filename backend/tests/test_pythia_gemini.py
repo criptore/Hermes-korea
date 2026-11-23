@@ -126,6 +126,48 @@ async def test_repli_local_si_gemini_echoue(monkeypatch):
     assert hotes == ["generativelanguage.googleapis.com", "127.0.0.1"]
 
 
+async def test_gemini_429_reessais_espaces(monkeypatch):
+    """Quota par minute (429, offre gratuite) : plusieurs réessais espacés."""
+    monkeypatch.setattr(settings, "gemini_actif", True)
+    monkeypatch.setattr(settings, "gemini_api_key", CLE)
+    attentes: list[float] = []
+
+    async def noter(delai: float) -> None:
+        attentes.append(delai)
+
+    monkeypatch.setattr(pythia.asyncio, "sleep", noter)
+    appels: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        appels.append(1)
+        if len(appels) <= 3:
+            return httpx.Response(429, json=[{"error": {"code": 429}}])
+        return _reponse_gemini("ok")
+
+    _transport(monkeypatch, handler)
+    rep = await pythia.generer("x")
+    assert rep.texte == "ok"
+    assert attentes == list(pythia._GEMINI_ATTENTES_RETRY)
+
+
+async def test_double_echec_remonte_la_cause_gemini(monkeypatch):
+    """Gemini puis repli local en échec : le message garde l'erreur Gemini."""
+    monkeypatch.setattr(settings, "gemini_actif", True)
+    monkeypatch.setattr(settings, "gemini_api_key", CLE)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "generativelanguage.googleapis.com":
+            return httpx.Response(400, json=[{"error": {"message": "API key not valid"}}])
+        return httpx.Response(404, json={"error": "model 'qwen3:8b' not found"})
+
+    _transport(monkeypatch, handler)
+    with pytest.raises(pythia.ErreurPythia) as exc:
+        await pythia.generer("x")
+    message = str(exc.value)
+    assert message.startswith("gemini failed:")
+    assert "400" in message and "local fallback ollama failed" in message
+
+
 def test_route_gemini_chiffre_la_cle():
     from hermes.main import app
 

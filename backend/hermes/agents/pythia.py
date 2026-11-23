@@ -365,6 +365,8 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 GEMINI_TIMEOUT_MAX = 60.0
 # Message httpx : « Server error '503 Service Unavailable' for url … ».
 _GEMINI_STATUTS_RETRY = ("'429 ", "'503 ")
+# Attentes (s) avant chaque réessai Gemini sur 429/503.
+_GEMINI_ATTENTES_RETRY = (2.0, 8.0, 20.0)
 
 
 def gemini_pret() -> bool:
@@ -389,7 +391,7 @@ class MoteurGemini:
         timeout = min(requete.timeout or GEMINI_TIMEOUT_MAX, GEMINI_TIMEOUT_MAX)
         en_tetes = {"Authorization": f"Bearer {settings.gemini_api_key.strip()}"}
         debut = time.perf_counter()
-        for tentative in (1, 2):
+        for tentative in range(1, len(_GEMINI_ATTENTES_RETRY) + 2):
             try:
                 data = await _post_json(
                     f"{GEMINI_URL}/chat/completions",
@@ -400,10 +402,12 @@ class MoteurGemini:
                 )
                 break
             except ErreurPythia as exc:
-                # Surcharge ponctuelle (503 « high demand », 429) : un seul réessai.
-                if tentative == 2 or not any(c in str(exc) for c in _GEMINI_STATUTS_RETRY):
+                # Surcharge ponctuelle (503 « high demand ») ou quota par minute
+                # (429, fréquent en offre gratuite) : réessais espacés.
+                derniere = tentative > len(_GEMINI_ATTENTES_RETRY)
+                if derniere or not any(c in str(exc) for c in _GEMINI_STATUTS_RETRY):
                     raise
-                await asyncio.sleep(2.0)
+                await asyncio.sleep(_GEMINI_ATTENTES_RETRY[tentative - 1])
         duree_ms = int((time.perf_counter() - debut) * 1000)
         try:
             texte = data["choices"][0]["message"]["content"]
@@ -445,7 +449,16 @@ class MoteurPrioritaire:
         except ErreurPythia as exc:
             logger.warning("PYTHIA: {} failed, falling back to local {} ({})",
                            self.principal.nom, self.repli.nom, exc)
+            erreur_principal = exc
+        try:
             return await self.repli.generer(requete)
+        except ErreurPythia as exc:
+            # Les deux ont échoué : on remonte aussi la cause côté Gemini, sinon le
+            # journal ne montre que l'erreur du repli local (ex. modèle absent).
+            raise ErreurPythia(
+                f"{self.principal.nom} failed: {erreur_principal} — "
+                f"local fallback {self.repli.nom} failed: {exc}"
+            ) from exc
 
     async def embeddings(self, texte: str, modele: str, timeout: float) -> list[float]:
         return await self.repli.embeddings(texte, modele, timeout)
