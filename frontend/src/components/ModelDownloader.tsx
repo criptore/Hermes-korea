@@ -14,9 +14,64 @@ function formatGo(octets: number): string {
 }
 
 /**
+ * Alternative au modèle local : Gemini en priorité avec une clé API (profil
+ * démo). Le texte des AO part alors chez Google ; PYTHIA local reste le repli.
+ */
+function GeminiRapide({ onReady }: { onReady: () => void }) {
+  const [cle, setCle] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const activer = async () => {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const c = await api.ecrireGemini({ actif: true, cle: cle.trim() });
+      if (c.actif && c.cle_configuree) onReady();
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEnCours(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+      <div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
+        Or use Gemini (API key)
+      </div>
+      <p style={{ fontSize: 12, color: "var(--fg-3)", lineHeight: 1.5, margin: "0 0 8px" }}>
+        KRINOS and HERMION then call Google&apos;s Gemini API first (tender text is sent to
+        Google), with a local model as fallback when one is installed. Can be turned off in
+        Settings → Demo profile.
+      </p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          className="input"
+          type="password"
+          autoComplete="off"
+          placeholder="Gemini API key"
+          value={cle}
+          onChange={(e) => setCle(e.target.value)}
+        />
+        <button
+          className="btn btn--gold"
+          disabled={enCours || !cle.trim()}
+          onClick={() => void activer()}
+        >
+          {enCours ? "Saving…" : "Use Gemini"}
+        </button>
+      </div>
+      {erreur && <ErreurBox message={erreur} />}
+    </div>
+  );
+}
+
+/**
  * Modal bloquant qui apparaît au démarrage si le modèle PYTHIA principal
- * n'est pas installé. Propose de choisir un modèle déjà installé ou d'en
- * télécharger un (sur clic explicite), avec suivi et annulation.
+ * n'est pas installé. Propose de choisir un modèle déjà installé, d'en
+ * télécharger un (sur clic explicite), avec suivi et annulation, ou d'utiliser
+ * Gemini avec une clé API (profil démo).
  * Appelle `onReady` quand le modèle est disponible.
  */
 export function ModelDownloader({ onReady }: Props) {
@@ -118,6 +173,7 @@ export function ModelDownloader({ onReady }: Props) {
           seconds. Otherwise, open the Ollama app (macOS) or run
           <code> ollama serve </code> yourself.
         </p>
+        <GeminiRapide onReady={onReady} />
         {erreur && <ErreurBox message={erreur} />}
       </ModalShell>
     );
@@ -202,6 +258,8 @@ export function ModelDownloader({ onReady }: Props) {
 
         {p.erreur && <ErreurBox message={p.erreur} />}
         {erreur && !p.erreur && <ErreurBox message={erreur} />}
+
+        <GeminiRapide onReady={onReady} />
       </ModalShell>
     );
   }
