@@ -13,21 +13,19 @@ type Props = {
   onDone: (profile: UserProfile) => void;
 };
 
-// Préset métier par défaut (déploiement mono-utilisateur : commercial
-// LinkMobility — CPaaS / messagerie mobile). Éditable à l'onboarding et dans
-// Paramètres. Centralisé ici pour être ajusté facilement si la cible change.
-// Bilingue : coréen pour KONEPS (나라장터), anglais pour la Banque mondiale.
-// Termes précis plutôt que génériques — ex. on n'exclut pas « 공사 » (travaux),
-// qui figure aussi dans le nom des entreprises publiques (한국전력공사).
+// Préset métier par défaut = mots-clés du profil de démo HERMES Korea
+// (`backend/hermes/profil_demo.py`) : volontairement larges pour remonter un
+// maximum d'AO, KRINOS trie ensuite par score. Éditable à l'onboarding et dans
+// Paramètres. Bilingue : coréen pour KONEPS (나라장터), anglais pour la Banque
+// mondiale. Termes précis côté exclusions — ex. on n'exclut pas « 공사 »
+// (travaux), qui figure aussi dans le nom des entreprises publiques (한국전력공사).
 const PRESET_INCLUS =
-  "문자메시지, 문자 발송, 대량문자, 알림톡, 카카오 알림톡, SMS, RCS, " +
-  "메시징 서비스, 본인인증, OTP, 통합메시징, 모바일 메시지, " +
-  "SMS service, bulk SMS, mobile messaging, messaging platform, CPaaS, " +
-  "notification service, two-factor authentication";
+  "시스템, 소프트웨어, 정보화, 플랫폼, 데이터, " +
+  "system, software, digital, consulting, services";
 
 const PRESET_EXCLUS =
-  "청소, 조경, 급식, 건설공사, 광케이블, 통신장비, 전화기, " +
-  "cleaning, catering, landscaping, civil works, fibre optic cable";
+  "청소, 조경, 급식, 건설공사, " +
+  "cleaning, catering, civil works, road construction";
 
 function parseMotsCles(value: string): string[] {
   return value

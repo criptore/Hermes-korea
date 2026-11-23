@@ -1,9 +1,13 @@
 """Profil de base (démo) — prêt en un clic pour montrer ARGOS → KRINOS → HERMION.
 
-Pré-remplit MNEMOSYNE avec un profil plausible de PME IT coréenne : profil
-métier, mots-clés de veille (coréen + anglais, ≤ 10 pour que KONEPS les filtre
-côté serveur), workflow HERMION court et pipeline réglé pour une démo rapide
-(peu d'AO par cycle, seuil abaissé). L'onboarding est marqué terminé.
+Pré-remplit MNEMOSYNE avec un profil plausible de PME IT / conseil coréenne :
+profil métier, mots-clés de veille **larges** (coréen + anglais, ≤ 10 pour que
+KONEPS les filtre côté serveur) pour remonter un maximum d'AO pendant la
+présentation, workflow HERMION court et pipeline réglé pour une démo rapide
+(peu d'AO analysés par cycle, seuil abaissé). L'onboarding est marqué terminé.
+
+Ce profil est aussi préchargé automatiquement au premier lancement de HERMES
+Korea (voir `hermes.precharge_demo`), avec des AO anglais d'exemple.
 
 Aucune collecte n'est lancée ici : la démo la déclenche quand l'utilisateur le
 décide (bouton « Run demo »), pour que l'on voie les agents travailler tour à tour.
@@ -28,10 +32,20 @@ from hermes.agents.profil_metier import ProfilMetier, enregistrer_profil
 
 PROFIL = ProfilMetier(
     activite=(
-        "Korean IT services SME: development, integration and maintenance of public "
-        "information systems, cloud migration, cybersecurity and AI/data platforms."
+        "Korean IT and digital consulting SME: development, integration and maintenance "
+        "of public information systems, cloud migration, cybersecurity, AI/data "
+        "platforms and digital transformation consulting services."
     ),
-    secteurs=["Public administration", "E-government", "Smart city", "Education"],
+    secteurs=[
+        "Public administration",
+        "E-government",
+        "Smart city",
+        "Education",
+        "Health",
+        "Transport",
+        "Energy",
+        "Finance",
+    ],
     zone_geographique="South Korea and Asia (export through World Bank projects)",
     effectif=85,
     ca_tranche="10 - 50 M€",
@@ -45,17 +59,20 @@ PROFIL = ProfilMetier(
 )
 
 # ≤ 10 : KONEPS pousse chaque mot-clé au serveur (au-delà, collecte non filtrée).
+# Termes volontairement larges : la démo doit remonter beaucoup d'AO, KRINOS
+# se charge ensuite du tri par score. Coréen pour KONEPS (나라장터), anglais
+# pour la Banque mondiale.
 MOTS_CLES_INCLUS = (
-    "정보시스템",
+    "시스템",
     "소프트웨어",
-    "시스템 구축",
-    "클라우드",
-    "정보보안",
-    "인공지능",
+    "정보화",
+    "플랫폼",
+    "데이터",
+    "system",
     "software",
-    "information system",
-    "ICT",
     "digital",
+    "consulting",
+    "services",
 )
 
 MOTS_CLES_EXCLUS = (
@@ -95,8 +112,10 @@ WORKFLOW = WorkflowReponse(
 )
 
 # Démo : peu d'AO par cycle pour que chaque agent passe vite la main au suivant.
+# Seuil 80 : beaucoup d'AO remontent (mots-clés larges), HERMION ne rédige
+# automatiquement que les meilleurs ; les autres se rédigent d'un clic.
 ORCHESTRATION = ConfigOrchestration(
-    actif=True, seuil_score=55.0, auto_rediger=True, max_par_cycle=3
+    actif=True, seuil_score=80.0, auto_rediger=True, max_par_cycle=3
 )
 
 

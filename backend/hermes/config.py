@@ -141,6 +141,9 @@ class Settings(BaseSettings):
     laya_max_tokens: int = 1024
     # Juge local PYTHIA anti-manipulation (2e couche) : actif par défaut, hors ligne.
     juge_local_actif: bool = True
+    # HERMES Korea : profil de démo + AO anglais d'exemple préchargés au premier
+    # lancement (une fois par version, voir `hermes.precharge_demo`).
+    demo_precharge: bool = True
 
     def model_post_init(self, __context: object) -> None:
         self.host = "127.0.0.1"

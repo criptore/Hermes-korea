@@ -183,7 +183,7 @@ def test_profil_demo():
         filtre = client.get("/argos/filtre").json()
         assert filtre["inclus"] == data["mots_cles_inclus"]
         assert client.get("/profil/metier").json()["activite"].startswith("Korean IT")
-        assert client.get("/orchestration/config").json()["seuil_score"] == 55.0
+        assert client.get("/orchestration/config").json()["seuil_score"] == 80.0
         assert len(client.get("/hermion/workflow").json()["sections"]) == 3
 
     from hermes import onboarding
