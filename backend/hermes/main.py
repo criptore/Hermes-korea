@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from hermes import __version__, onboarding, surveillance_parent
+from hermes import __version__, onboarding, precharge_demo, surveillance_parent
 from hermes.agents.argos.scheduler import scheduler_global
 from hermes.agents.krinos import laya as laya_agent
 from hermes.agents.krinos import laya_modele
@@ -51,6 +51,9 @@ async def lifespan(_app: FastAPI):
     init_db()
     _migrer_onboarding()
     with Session(get_engine()) as session:
+        # HERMES Korea : profil de démo + AO d'exemple, données françaises purgées.
+        if settings.demo_precharge:
+            precharge_demo.appliquer_si_necessaire(session)
         pythia_api.appliquer_modele_persiste(session)
         pythia_api.appliquer_gemini_persiste(session)
         # Laya activé : intégrité SHA-256 vérifiée en tâche de fond (local, sans réseau,

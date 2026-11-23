@@ -259,10 +259,20 @@ valid model name, e.g. `HERMES_PYTHIA_MODELE=hf.co/unsloth/Qwen3-8B-GGUF:Q4_K_M`
 
 ### Demo profile and Gemini (optional, cloud)
 
+**HERMES Korea starts preloaded** (no blank first launch): on the first start of
+a version, the demo profile below is applied, 16 sample English tenders (KONEPS
+and World Bank Asia, references `DEMO-…`) are added — most already scored by
+KRINOS, 3 left raw to show a live analysis, 2 with a HERMION draft awaiting
+human review — and legacy HERMES France data (BOAMP/TED/DECP tenders, agent
+journal, knowledge base) is removed. Tenders already collected from KONEPS or
+the World Bank are kept, and the Gemini key is never touched. Opt out with
+`HERMES_DEMO_PRECHARGE=false`.
+
 *Settings › Demo profile* (or “Use the demo profile” on the first-launch screen)
-loads a ready-made base profile: a Korean IT services SME, bilingual keywords
-(Korean for KONEPS, English for the World Bank), a short HERMION workflow and a
-fast pipeline (3 tenders per cycle, drafting from score 55). Then *Run ARGOS* on
+loads the same base profile again: a Korean IT and digital consulting SME, broad
+bilingual keywords to surface as many tenders as possible (Korean for KONEPS,
+English for the World Bank), a short HERMION workflow and a fast pipeline
+(3 tenders per cycle, automatic drafting from score 80). Then *Run ARGOS* on
 the top bar: the agents take turns — ARGOS collects, KRINOS analyses, HERMION
 drafts — and the top bar and toasts show which one is working.
 

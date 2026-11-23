@@ -203,7 +203,7 @@ def _construire_query(
     classification-cpv IN (…)] [AND contract-nature IN (…)] [AND publication-date
     >= YYYYMMDD] [AND deadline-… >= / <= YYYYMMDD]`` suivie du tri.
 
-    Le pays par défaut reste FRA (usage LinkMobility France) mais devient
+    Le pays par défaut reste FRA (usage historique HERMES France) mais devient
     configurable via ``criteres.pays``. Tous les fragments avancés ont été
     validés en live (2026-06-19).
     """

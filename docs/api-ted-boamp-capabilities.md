@@ -100,7 +100,7 @@ Champs TED a normaliser dans HERMES:
 Recommandations TED:
 
 - Garder `place-of-performance IN (FRA)` comme filtre de base V1 pour un usage
-  LinkMobility France, mais rendre le pays configurable plus tard.
+  HERMES France (historique), mais rendre le pays configurable plus tard.
 - Utiliser `notice-title ~ "terme"` pour les mots-cles precis; eviter le
   full-text trop large en premiere intention.
 - Ajouter progressivement les filtres CPV et nature de contrat, car ils sont
