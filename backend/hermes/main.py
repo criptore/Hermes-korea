@@ -52,6 +52,7 @@ async def lifespan(_app: FastAPI):
     _migrer_onboarding()
     with Session(get_engine()) as session:
         pythia_api.appliquer_modele_persiste(session)
+        pythia_api.appliquer_gemini_persiste(session)
         # Laya activé : intégrité SHA-256 vérifiée en tâche de fond (local, sans réseau,
         # sans bloquer le démarrage) pour que « à réinstaller » soit visible d'emblée.
         if laya_agent.reglage_actif(session):

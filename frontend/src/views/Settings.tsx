@@ -21,7 +21,9 @@ import {
   type MiseAJourDisponible,
   type ProgressionMiseAJour,
 } from "../lib/miseAJour";
+import { GeminiReglage } from "../components/GeminiReglage";
 import { ProfilMetierSection } from "../components/ProfilMetierSection";
+import { chargerProfilDemo } from "../lib/profilDemo";
 import { WorkflowEditor, type WorkflowDraft } from "../components/WorkflowEditor";
 import {
   api,
@@ -50,6 +52,7 @@ type Props = {
 };
 
 type SectionId =
+  | "demo"
   | "profil"
   | "metier"
   | "portails"
@@ -60,6 +63,7 @@ type SectionId =
   | "bureau";
 
 const SECTIONS: { id: SectionId; label: string }[] = [
+  { id: "demo",      label: "Demo profile" },
   { id: "profil",    label: "User profile" },
   { id: "metier",    label: "Business profile" },
   { id: "portails",  label: "Portals" },
@@ -94,6 +98,7 @@ export function Settings({ profile, onSaveProfile }: Props) {
         </nav>
 
         <div className="settings-content">
+          {section === "demo" && <DemoSection onSaveProfile={onSaveProfile} />}
           {section === "profil" && (
             <UserProfileSection profile={profile} onSave={onSaveProfile} />
           )}
@@ -106,6 +111,59 @@ export function Settings({ profile, onSaveProfile }: Props) {
           {section === "bureau" && <BureauSection />}
         </div>
       </div>
+    </div>
+  );
+}
+
+function DemoSection({ onSaveProfile }: { onSaveProfile: (profile: UserProfile) => void }) {
+  const [enCours, setEnCours] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const charger = async () => {
+    setEnCours(true);
+    setMessage(null);
+    setErreur(null);
+    try {
+      const { profil, resume } = await chargerProfilDemo();
+      onSaveProfile(profil);
+      setMessage(
+        `Demo profile loaded: ${resume.mots_cles_inclus.length} keywords, ` +
+          `up to ${resume.max_par_cycle} tenders per cycle, drafting from score ${resume.seuil_score}. ` +
+          "Go to Home and run a collection cycle to watch ARGOS, KRINOS and HERMION take turns.",
+      );
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEnCours(false);
+    }
+  };
+
+  return (
+    <div className="settings-section">
+      <h2>Demo profile</h2>
+      <p className="settings-section__desc">
+        A ready-made base profile for demos: a Korean IT services SME, bilingual watch
+        keywords (Korean for KONEPS, English for the World Bank), a short HERMION
+        workflow and a fast pipeline (3 tenders per cycle). Loading it replaces the
+        current business profile, keywords, workflow and pipeline settings.
+      </p>
+
+      <GeminiReglage />
+
+      <div style={{ marginTop: 18 }}>
+        <button className="btn btn--gold" disabled={enCours} onClick={() => void charger()}>
+          {enCours ? "Loading…" : "Load demo profile"}
+        </button>
+      </div>
+      {(message || erreur) && (
+        <div
+          className="settings-row__hint"
+          style={{ marginTop: 10, color: erreur ? "var(--hermion)" : "var(--fg-2)" }}
+        >
+          {erreur ? `Error: ${erreur}` : message}
+        </div>
+      )}
     </div>
   );
 }

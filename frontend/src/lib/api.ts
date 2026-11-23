@@ -129,6 +129,28 @@ export type ScrapersArgos = {
   disponibles: string[];
 };
 
+export type EtatPipeline = {
+  en_cours: boolean;
+  agent: "KRINOS" | "HERMION" | null;
+  ao_id: number | null;
+  titre: string | null;
+};
+
+export type ConfigGemini = {
+  actif: boolean;
+  modele: string;
+  cle_configuree: boolean;
+  cle_depuis_env: boolean;
+};
+
+export type ProfilDemo = {
+  mots_cles_inclus: string[];
+  mots_cles_exclus: string[];
+  seuil_score: number;
+  max_par_cycle: number;
+  gemini_actif: boolean;
+};
+
 export type PortailArgos = {
   id: number;
   nom: string;
@@ -788,6 +810,13 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(c),
     }),
+  // Gemini en priorité (profil démo), repli PYTHIA local. La clé n'est jamais relue.
+  lireGemini: () => fetchJson<ConfigGemini>("/pythia/gemini"),
+  ecrireGemini: (c: { actif: boolean; modele?: string; cle?: string; effacer_cle?: boolean }) =>
+    fetchJson<ConfigGemini>("/pythia/gemini", { method: "PUT", body: JSON.stringify(c) }),
+  chargerProfilDemo: (c: { activer_gemini?: boolean; gemini_cle?: string } = {}) =>
+    fetchJson<ProfilDemo>("/profil/demo", { method: "POST", body: JSON.stringify(c) }),
+  etatPipeline: () => fetchJson<EtatPipeline>("/orchestration/etat"),
   lancerPipeline: () =>
     fetchJson<RapportOrchestration>("/orchestration/traiter", {
       method: "POST",

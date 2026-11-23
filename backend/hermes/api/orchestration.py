@@ -12,6 +12,7 @@ from hermes.agents.orchestrateur import (
     ConfigOrchestration,
     charger_config,
     enregistrer_config,
+    etape_en_cours,
     pipeline_en_cours,
     traiter_pipeline,
 )
@@ -55,6 +56,20 @@ def ecrire_config(payload: ConfigIO, session: SessionDep) -> ConfigIO:
         ),
     )
     return _config_io(nettoye)
+
+
+class EtatPipelineIO(BaseModel):
+    en_cours: bool
+    # Agent au travail (KRINOS ou HERMION) et AO concerné, si un pipeline tourne.
+    agent: str | None = None
+    ao_id: int | None = None
+    titre: str | None = None
+
+
+@router.get("/etat", response_model=EtatPipelineIO)
+def lire_etat() -> EtatPipelineIO:
+    etape = etape_en_cours() or {}
+    return EtatPipelineIO(en_cours=pipeline_en_cours(), **etape)
 
 
 @router.post("/traiter", response_model=RapportIO)

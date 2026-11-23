@@ -23,6 +23,9 @@ avant toute soumission.
    Mise à jour de l'app (macOS) : lecture de `latest.json` sur les Releases
    GitHub **uniquement sur clic** (ou si l'utilisateur active la vérification
    au démarrage, désactivée par défaut) ; archive vérifiée par signature minisign.
+   Exception démo : **Gemini en priorité** (`HERMES_GEMINI_API_KEY` ou clé chiffrée
+   en base, Paramètres → Demo profile), repli PYTHIA local ; désactivé par défaut,
+   activé explicitement par Joshua — le texte des AO part alors chez Google.
 2. **Validation humaine obligatoire** — la soumission finale d'une réponse à un
    AO est *exclusivement* humaine, sans exception. HERMION rédige, ne soumet
    jamais.

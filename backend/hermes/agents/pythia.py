@@ -11,6 +11,11 @@ HERMION (rédaction). Deux moteurs sont disponibles, choisis par
   `HERMES_PYTHIA_URL`.
 
 Dans les deux cas l'URL doit être une adresse loopback (invariant local-first).
+
+Profil démo : si Gemini est activé (`gemini_actif` + clé), il passe EN PRIORITÉ
+(API Google compatible OpenAI) et le moteur local ci-dessus sert de repli en cas
+d'échec. C'est la seule exception au local-first : désactivée par défaut,
+activée explicitement par l'utilisateur.
 Les appelants n'utilisent que des paramètres neutres (`max_tokens`, `contexte`,
 `raisonnement`) ; chaque moteur les traduit dans son dialecte. Un modèle
 Hugging Face GGUF se désigne, côté Ollama, par `hf.co/<org>/<repo>:<quant>`.
@@ -30,6 +35,7 @@ from typing import Any, Protocol
 from urllib.parse import urlparse
 
 import httpx
+from loguru import logger
 
 from hermes.config import settings
 
@@ -128,11 +134,17 @@ def _timeout_effectif(timeout: float | None) -> float:
     return settings.pythia_timeout_secondes if timeout is None else timeout
 
 
-async def _post_json(url: str, payload: dict[str, Any], timeout: float, libelle: str) -> Any:
+async def _post_json(
+    url: str,
+    payload: dict[str, Any],
+    timeout: float,
+    libelle: str,
+    headers: dict[str, str] | None = None,
+) -> Any:
     """POST JSON sérialisé par le verrou d'inférence, erreurs normalisées en ErreurPythia."""
     try:
         async with _verrou_inference(), httpx.AsyncClient(timeout=timeout) as client:
-            r = await client.post(url, json=payload)
+            r = await client.post(url, json=payload, headers=headers)
             r.raise_for_status()
             return r.json()
     except httpx.TimeoutException as exc:
@@ -346,8 +358,112 @@ class MoteurOpenAICompatible:
         return [str(m.get("id") or "") for m in modeles if isinstance(m, dict)]
 
 
-def moteur_actif() -> MoteurLLM:
-    """Moteur choisi par `HERMES_PYTHIA_MOTEUR` (erreur explicite si inconnu)."""
+# API Gemini compatible OpenAI (constante : la clé n'est envoyée qu'à Google).
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+# Gemini répond en quelques secondes ; au-delà, mieux vaut basculer sur le local
+# que de geler la démo.
+GEMINI_TIMEOUT_MAX = 60.0
+# Message httpx : « Server error '503 Service Unavailable' for url … ».
+_GEMINI_STATUTS_RETRY = ("'429 ", "'503 ")
+
+
+def gemini_pret() -> bool:
+    """Vrai si Gemini est activé et qu'une clé est disponible."""
+    return settings.gemini_actif and bool(settings.gemini_api_key.strip())
+
+
+class MoteurGemini:
+    """Gemini via son API compatible OpenAI (`/chat/completions`), clé en Bearer."""
+
+    nom = "gemini"
+
+    def construire_payload(self, r: RequetePythia) -> dict[str, Any]:
+        payload = MoteurOpenAICompatible().construire_payload(r)
+        payload.pop("chat_template_kwargs", None)
+        payload["model"] = settings.gemini_modele
+        # Raisonnement coupé par défaut (JSON KRINOS, rapidité en démo).
+        payload["reasoning_effort"] = "low" if r.raisonnement else "none"
+        return payload
+
+    async def generer(self, requete: RequetePythia) -> ReponsePythia:
+        timeout = min(requete.timeout or GEMINI_TIMEOUT_MAX, GEMINI_TIMEOUT_MAX)
+        en_tetes = {"Authorization": f"Bearer {settings.gemini_api_key.strip()}"}
+        debut = time.perf_counter()
+        for tentative in (1, 2):
+            try:
+                data = await _post_json(
+                    f"{GEMINI_URL}/chat/completions",
+                    self.construire_payload(requete),
+                    timeout,
+                    "Gemini",
+                    headers=en_tetes,
+                )
+                break
+            except ErreurPythia as exc:
+                # Surcharge ponctuelle (503 « high demand », 429) : un seul réessai.
+                if tentative == 2 or not any(c in str(exc) for c in _GEMINI_STATUTS_RETRY):
+                    raise
+                await asyncio.sleep(2.0)
+        duree_ms = int((time.perf_counter() - debut) * 1000)
+        try:
+            texte = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError):
+            texte = None
+        if not isinstance(texte, str):
+            raise ErreurPythia("Invalid Gemini response: 'choices[0].message.content' missing")
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        return ReponsePythia(
+            texte=retirer_raisonnement(texte),
+            modele=settings.gemini_modele,
+            duree_ms=duree_ms,
+            tokens_entree=usage.get("prompt_tokens"),
+            tokens_sortie=usage.get("completion_tokens"),
+            duree_generation_ms=duree_ms,
+        )
+
+    async def embeddings(self, texte: str, modele: str, timeout: float) -> list[float]:
+        raise ErreurPythia("Gemini embeddings are not used by HERMES")
+
+    async def est_disponible(self, timeout: float) -> bool:
+        return gemini_pret()
+
+    async def lister_modeles(self) -> list[str]:
+        return [settings.gemini_modele]
+
+
+class MoteurPrioritaire:
+    """Moteur principal (Gemini) avec repli automatique sur le moteur local."""
+
+    def __init__(self, principal: MoteurLLM, repli: MoteurLLM):
+        self.principal = principal
+        self.repli = repli
+        self.nom = f"{principal.nom}+{repli.nom}"
+
+    async def generer(self, requete: RequetePythia) -> ReponsePythia:
+        try:
+            return await self.principal.generer(requete)
+        except ErreurPythia as exc:
+            logger.warning("PYTHIA: {} failed, falling back to local {} ({})",
+                           self.principal.nom, self.repli.nom, exc)
+            return await self.repli.generer(requete)
+
+    async def embeddings(self, texte: str, modele: str, timeout: float) -> list[float]:
+        return await self.repli.embeddings(texte, modele, timeout)
+
+    async def est_disponible(self, timeout: float) -> bool:
+        return await self.principal.est_disponible(timeout) or await self.repli.est_disponible(
+            timeout
+        )
+
+    async def lister_modeles(self) -> list[str]:
+        try:
+            return await self.repli.lister_modeles()
+        except ErreurPythia:
+            return []
+
+
+def moteur_local() -> MoteurLLM:
+    """Moteur local choisi par `HERMES_PYTHIA_MOTEUR` (erreur explicite si inconnu)."""
     nom = (settings.pythia_moteur or "ollama").strip().lower()
     if nom == "ollama":
         return MoteurOllama()
@@ -356,6 +472,14 @@ def moteur_actif() -> MoteurLLM:
     raise ErreurPythia(
         f"Moteur PYTHIA inconnu : {settings.pythia_moteur!r} (attendu : {', '.join(MOTEURS)})"
     )
+
+
+def moteur_actif() -> MoteurLLM:
+    """Gemini en priorité s'il est activé (repli local), sinon le moteur local."""
+    local = moteur_local()
+    if gemini_pret():
+        return MoteurPrioritaire(MoteurGemini(), local)
+    return local
 
 
 async def generer(

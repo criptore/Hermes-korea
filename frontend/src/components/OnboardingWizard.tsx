@@ -5,6 +5,7 @@ import { ModaleFond, ModalePanneau } from "./Modale";
 import { WorkflowEditor, type WorkflowDraft } from "./WorkflowEditor";
 import { api } from "../lib/api";
 import { saveUserProfile, markOnboardingDone, type UserProfile } from "../lib/userProfile";
+import { chargerProfilDemo } from "../lib/profilDemo";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -116,6 +117,21 @@ export function OnboardingWizard({ onDone }: Props) {
     }
   };
 
+  // Raccourci démo : profil de base complet en un clic (Gemini en option).
+  const [cleGemini, setCleGemini] = useState("");
+  const utiliserDemo = async () => {
+    setSubmitting(true);
+    setErreur(null);
+    try {
+      const { profil } = await chargerProfilDemo({ cleGemini });
+      onDone(profil);
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const suggestFilters = async () => {
     setSuggesting(true);
     setErreur(null);
@@ -160,6 +176,45 @@ export function OnboardingWizard({ onDone }: Props) {
             onLastName={setLastName}
             onEmail={setEmail}
           />
+        )}
+        {step === 1 && (
+          <div
+            style={{
+              margin: "4px 26px 0",
+              padding: "12px 14px",
+              background: "rgba(200,169,81,0.08)",
+              border: "1px solid rgba(200,169,81,0.30)",
+              borderRadius: 6,
+              fontSize: 12,
+              color: "var(--fg-2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div>
+              <strong>Demo?</strong> Skip the setup with a ready-made base profile (Korean IT
+              services SME, bilingual keywords, fast pipeline). Optionally paste a Gemini API
+              key to use Gemini first, with local PYTHIA as fallback.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                className="input"
+                type="password"
+                autoComplete="off"
+                placeholder="Gemini API key (optional)"
+                value={cleGemini}
+                onChange={(e) => setCleGemini(e.target.value)}
+              />
+              <button
+                className="btn btn--ghost"
+                disabled={submitting}
+                onClick={() => void utiliserDemo()}
+              >
+                {submitting ? "Loading…" : "Use the demo profile"}
+              </button>
+            </div>
+          </div>
         )}
         {step === 2 && (
           <StepEntreprise
