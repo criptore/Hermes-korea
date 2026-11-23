@@ -257,6 +257,22 @@ otherwise KRINOS prompts (~5k tokens) are truncated.
 **Hugging Face models (GGUF) through Ollama**: `hf.co/<org>/<repo>:<quant>` is a
 valid model name, e.g. `HERMES_PYTHIA_MODELE=hf.co/unsloth/Qwen3-8B-GGUF:Q4_K_M`.
 
+### Demo profile and Gemini (optional, cloud)
+
+*Settings › Demo profile* (or “Use the demo profile” on the first-launch screen)
+loads a ready-made base profile: a Korean IT services SME, bilingual keywords
+(Korean for KONEPS, English for the World Bank), a short HERMION workflow and a
+fast pipeline (3 tenders per cycle, drafting from score 55). Then *Run ARGOS* on
+the top bar: the agents take turns — ARGOS collects, KRINOS analyses, HERMION
+drafts — and the top bar and toasts show which one is working.
+
+For demos, **Gemini can be used first** (*Use Gemini first* + API key, default model
+`gemini-3.5-flash`), with local PYTHIA as automatic fallback if Gemini fails or is
+overloaded. This is the only exception to local-first: it is **off by default**,
+and while it is on, tender text is sent to Google's Gemini API. The key is stored
+encrypted (AES-256-GCM) in MNEMOSYNE, or read from `HERMES_GEMINI_API_KEY`; it is
+never written to the repository.
+
 ### Comparing models (benchmark)
 
 `backend/scripts/banc_pythia.py` runs KRINOS on fictitious reference tenders

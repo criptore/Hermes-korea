@@ -8,6 +8,8 @@ localement et de lancer son téléchargement (Qwen3 8B ~5,2 Go) avec un
 from __future__ import annotations
 
 import asyncio
+import base64
+import json
 import shutil
 import time
 from dataclasses import dataclass, field
@@ -15,19 +17,27 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from loguru import logger
+from pydantic import BaseModel, Field
 from sqlmodel import Session
 
 from hermes.agents import pythia
 from hermes.config import settings
 from hermes.db.models import Parametre
 from hermes.db.session import get_session
+from hermes.securite.credentials import (
+    ErreurCredentials,
+    chiffrer_credentials,
+    dechiffrer_credentials,
+)
 
 router = APIRouter(prefix="/pythia", tags=["pythia"])
 
 # Modèle choisi par l'utilisateur (parmi les modèles déjà installés), persisté
 # dans MNEMOSYNE pour survivre au redémarrage.
 CLE_MODELE = "pythia.modele"
+# Gemini (profil démo) : activation, modèle et clé API chiffrée (AES-256-GCM).
+CLE_GEMINI = "pythia.gemini"
 
 
 def appliquer_modele_persiste(session: Session) -> None:
@@ -40,6 +50,82 @@ def appliquer_modele_persiste(session: Session) -> None:
     entree = session.get(Parametre, CLE_MODELE)
     if entree and entree.valeur.strip():
         settings.pythia_modele = entree.valeur.strip()
+
+
+# --------------------------------------------------------------------------- #
+# Gemini (profil démo) — persistance
+# --------------------------------------------------------------------------- #
+
+
+def _lire_gemini(session: Session) -> dict:
+    entree = session.get(Parametre, CLE_GEMINI)
+    if entree is None:
+        return {}
+    try:
+        data = json.loads(entree.valeur)
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _cle_dechiffree(data: dict) -> str:
+    blob = data.get("cle_chiffree")
+    if not isinstance(blob, str) or not blob:
+        return ""
+    try:
+        return (dechiffrer_credentials(base64.b64decode(blob)) or {}).get("cle", "")
+    except (ErreurCredentials, ValueError):
+        logger.warning("PYTHIA: stored Gemini key cannot be decrypted (master key changed?)")
+        return ""
+
+
+def appliquer_gemini_persiste(session: Session) -> None:
+    """Applique au démarrage le réglage Gemini de MNEMOSYNE.
+
+    La variable HERMES_GEMINI_API_KEY, si fournie, prime sur la clé en base.
+    """
+    data = _lire_gemini(session)
+    if not data:
+        return
+    settings.gemini_actif = bool(data.get("actif"))
+    modele = str(data.get("modele") or "").strip()
+    if modele:
+        settings.gemini_modele = modele
+    if not settings.gemini_cle_env:
+        settings.gemini_api_key = _cle_dechiffree(data)
+
+
+def enregistrer_gemini(
+    session: Session,
+    *,
+    actif: bool,
+    modele: str | None = None,
+    cle: str | None = None,
+    effacer_cle: bool = False,
+) -> None:
+    """Persiste et applique le réglage Gemini (clé chiffrée, jamais relue en clair)."""
+    data = _lire_gemini(session)
+    data["actif"] = actif
+    if modele and modele.strip():
+        data["modele"] = modele.strip()
+    if effacer_cle:
+        data.pop("cle_chiffree", None)
+    elif cle and cle.strip():
+        data["cle_chiffree"] = base64.b64encode(
+            chiffrer_credentials({"cle": cle.strip()})
+        ).decode("ascii")
+    entree = session.get(Parametre, CLE_GEMINI) or Parametre(
+        cle=CLE_GEMINI, valeur="{}", description="Gemini (demo profile): enabled, model, key"
+    )
+    entree.valeur = json.dumps(data)
+    entree.maj_le = datetime.now(UTC)
+    session.add(entree)
+    session.commit()
+    settings.gemini_actif = actif
+    if data.get("modele"):
+        settings.gemini_modele = data["modele"]
+    if not settings.gemini_cle_env:
+        settings.gemini_api_key = _cle_dechiffree(data)
 
 
 # --------------------------------------------------------------------------- #
@@ -122,9 +208,61 @@ class OptionsModelesResponse(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
+class GeminiRead(BaseModel):
+    actif: bool
+    modele: str
+    cle_configuree: bool
+    # Clé fournie par HERMES_GEMINI_API_KEY : non modifiable depuis l'UI.
+    cle_depuis_env: bool
+
+
+class GeminiWrite(BaseModel):
+    actif: bool
+    modele: str | None = Field(default=None, max_length=80)
+    cle: str | None = Field(default=None, max_length=300)
+    effacer_cle: bool = False
+
+
+def _gemini_read() -> GeminiRead:
+    return GeminiRead(
+        actif=settings.gemini_actif,
+        modele=settings.gemini_modele,
+        cle_configuree=bool(settings.gemini_api_key.strip()),
+        cle_depuis_env=settings.gemini_cle_env,
+    )
+
+
+@router.get("/gemini", response_model=GeminiRead)
+def lire_gemini() -> GeminiRead:
+    return _gemini_read()
+
+
+@router.put("/gemini", response_model=GeminiRead)
+def ecrire_gemini(
+    payload: GeminiWrite, session: Annotated[Session, Depends(get_session)]
+) -> GeminiRead:
+    """Active Gemini en priorité (repli PYTHIA local) et enregistre la clé chiffrée."""
+    enregistrer_gemini(
+        session,
+        actif=payload.actif,
+        modele=payload.modele,
+        cle=payload.cle,
+        effacer_cle=payload.effacer_cle,
+    )
+    return _gemini_read()
+
+
 @router.get("/modele/status", response_model=StatutModeleResponse)
 async def statut_modele(etat: EtatDep) -> StatutModeleResponse:
     modele_demande = etat.modele or settings.pythia_modele
+    if pythia.gemini_pret():
+        # Gemini actif : PYTHIA est prêt même sans modèle local installé.
+        return StatutModeleResponse(
+            modele=settings.gemini_modele,
+            installe=True,
+            ollama_disponible=True,
+            progression=_progression_read(etat),
+        )
     ollama_ok = await pythia.est_disponible(timeout=2.0)
     installe = False
     if ollama_ok:

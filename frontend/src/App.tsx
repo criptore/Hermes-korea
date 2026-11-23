@@ -217,19 +217,56 @@ function Coque() {
 
   const triggerCycle = useCallback(async () => {
     setIsLoading(true);
-    setAgents((a) => ({ ...a, argos: "running", krinos: "running" }));
+    // Tour à tour : ARGOS collecte, puis KRINOS analyse, puis HERMION rédige.
+    setAgents({ argos: "running", krinos: "active", hermion: "active" });
     setToast({
       title: "ARGOS",
       app: "Collection cycle started",
       msg: "Running the registered ARGOS scrapers — results in a few moments.",
       agent: "argos",
     });
+    let suivi: ReturnType<typeof setInterval> | undefined;
     try {
       const result = await api.collecterArgos(30);
-      const pipeline = await api.lancerPipeline();
       setTendersRefreshKey((key) => key + 1);
       setIsLoading(false);
-      setAgents((a) => ({ ...a, argos: "active", krinos: "active" }));
+      setAgents({ argos: "active", krinos: "running", hermion: "active" });
+      setToast({
+        title: "ARGOS",
+        app: `${result.ao_nouveaux} new tenders`,
+        msg: "Handing over to KRINOS for analysis; HERMION drafts the best ones next.",
+        agent: "argos",
+      });
+      // Suivi en direct de l'agent au travail (et rafraîchissement des vues).
+      let dernierAgent: string | null = null;
+      suivi = setInterval(() => {
+        api
+          .etatPipeline()
+          .then((etat) => {
+            if (!etat.en_cours || !etat.agent || etat.agent === dernierAgent) return;
+            dernierAgent = etat.agent;
+            const krinos = etat.agent === "KRINOS";
+            setAgents({
+              argos: "active",
+              krinos: krinos ? "running" : "active",
+              hermion: krinos ? "active" : "running",
+            });
+            setTendersRefreshKey((key) => key + 1);
+            setToast({
+              title: etat.agent,
+              app: krinos ? "Analysing" : "Drafting a response",
+              msg: etat.titre ?? "",
+              agent: krinos ? "krinos" : "hermion",
+            });
+          })
+          .catch(() => {
+            // Suivi best-effort : le résultat final arrive de toute façon.
+          });
+      }, 1500);
+      const pipeline = await api.lancerPipeline();
+      clearInterval(suivi);
+      setTendersRefreshKey((key) => key + 1);
+      setAgents({ argos: "active", krinos: "active", hermion: "active" });
       void rafraichirScheduler();
       const filtres = result.ao_filtres
         ? ` · ${result.ao_filtres} filtered out (outside criteria)`
@@ -239,14 +276,15 @@ function Coque() {
         : " · autonomous pipeline disabled";
       const echecs = pipeline.ao_echecs ? ` · ${pipeline.ao_echecs} pipeline failures` : "";
       setToast({
-        title: "ARGOS",
+        title: "HERMES",
         app: "Cycle complete",
         msg: `${result.ao_nouveaux} new tenders · ${result.ao_trouves} found · ${result.ao_dedoublonnes} duplicates merged${filtres}${pipelineMsg}${echecs}.`,
-        agent: "argos",
+        agent: "hermion",
       });
     } catch (error) {
+      clearInterval(suivi);
       setIsLoading(false);
-      setAgents((a) => ({ ...a, argos: "inactive", krinos: "active" }));
+      setAgents({ argos: "inactive", krinos: "active", hermion: "active" });
       setToast({
         title: "ARGOS",
         app: "Cycle failed",

@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     # URL de base (avec `/v1`) du serveur openai_compatible. Loopback obligatoire :
     # vérifiée à chaque appel (ErreurPythia sinon), jamais réécrite en silence.
     pythia_url: str = "http://127.0.0.1:8080/v1"
+    # Profil démo : Gemini (API Google, cloud) utilisé EN PRIORITÉ, PYTHIA local en
+    # repli. Exception assumée à l'invariant local-first : désactivé par défaut,
+    # activé explicitement (Paramètres → PYTHIA ou profil démo). La clé vient de
+    # HERMES_GEMINI_API_KEY ou de MNEMOSYNE (chiffrée), jamais du dépôt.
+    gemini_actif: bool = False
+    gemini_modele: str = "gemini-3.5-flash"
+    gemini_api_key: str = ""
+    # Calculé : clé fournie par l'environnement (prime sur celle en base).
+    gemini_cle_env: bool = False
     # Qwen3 8B (q4) : tient entièrement dans 8 Go de VRAM (~72 t/s), bien meilleur
     # que Mistral 7B en français, respect de structure et résumés (fini le
     # « résumé = titre »), sans sortir du local. Override possible via
@@ -136,6 +145,7 @@ class Settings(BaseSettings):
     def model_post_init(self, __context: object) -> None:
         self.host = "127.0.0.1"
         self.pythia_modele_explicite = "pythia_modele" in self.model_fields_set
+        self.gemini_cle_env = bool(self.gemini_api_key.strip())
         if not _est_url_loopback(self.ollama_base_url):
             self.ollama_base_url = "http://127.0.0.1:11434"
 

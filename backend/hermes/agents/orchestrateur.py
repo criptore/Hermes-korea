@@ -63,6 +63,24 @@ def pipeline_en_cours() -> bool:
     return _VERROU_PIPELINE.locked()
 
 
+# Agent au travail dans le pipeline en cours (affichage « tour à tour » côté UI).
+_ETAPE: dict[str, object] | None = None
+
+
+def etape_en_cours() -> dict[str, object] | None:
+    """Agent (KRINOS / HERMION) et AO traités en ce moment, ou None."""
+    return dict(_ETAPE) if _ETAPE else None
+
+
+def _signaler(agent: str | None, ao: AppelOffre | None = None) -> None:
+    global _ETAPE
+    _ETAPE = (
+        {"agent": agent, "ao_id": ao.id if ao else None, "titre": ao.titre if ao else None}
+        if agent
+        else None
+    )
+
+
 @dataclass(frozen=True)
 class ConfigOrchestration:
     """Réglages du pipeline autonome."""
@@ -214,7 +232,10 @@ async def traiter_pipeline(
     au prochain passage. Aucune exception n'est propagée.
     """
     async with _VERROU_PIPELINE:
-        return await _traiter_pipeline_verrouille(session, limite)
+        try:
+            return await _traiter_pipeline_verrouille(session, limite)
+        finally:
+            _signaler(None)
 
 
 async def _traiter_pipeline_verrouille(
@@ -276,6 +297,7 @@ async def _phase_analyse(
             if await _pretri_laya(session, ao):
                 rapport.details.append({"ao_id": ao_id, "action": "hors_profil_laya"})
                 continue
+            _signaler("KRINOS", ao)
             await _documents_best_effort(session, ao)
             resultat = await analyser_ao(session, ao)
             rapport.ao_analyses += 1
@@ -422,6 +444,7 @@ async def _phase_redaction(
         session.commit()
 
         try:
+            _signaler("HERMION", ao)
             await rediger_reponse(session, ao)
             rediges += 1
             rapport.ao_rediges += 1
