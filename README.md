@@ -4,7 +4,7 @@ A **100% local** desktop application that watches public tender portals and draf
 responses automatically. No cloud, no recurring cost, and mandatory human approval
 before anything is submitted.
 
-Runs on **Windows 10/11** and **macOS 11+** (Apple Silicon and Intel).
+Released for **macOS 11+ on Apple Silicon** (M1 and later); the code still builds on Windows and Intel Macs, but no installer is published for them.
 
 ## Architecture
 
@@ -58,8 +58,8 @@ or delete it.
 1. **Install Ollama** (PYTHIA's engine): download the app from
    <https://ollama.com/download> and move it to *Applications*
    (or `brew install ollama`).
-2. **Download** `HERMES-<version>-macos-<arch>.dmg` from the repository's
-   **Releases** page (`arm64` for Apple Silicon, `x86_64` for Intel), open it and
+2. **Download** `HERMES-<version>-macos-arm64.dmg` from the repository's
+   **Releases** page (Apple Silicon only), open it and
    drag **HERMES** onto **Applications**.
 3. **First launch:** the build is ad-hoc signed (not notarised), so macOS blocks
    the first opening. Right-click HERMES → *Open*, or on macOS 15+ go to

@@ -36,10 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # HERMES Korea : Apple Silicon uniquement (plus de build Intel).
           - runner: macos-latest      # Apple Silicon
             arch: arm64
-          - runner: macos-15-intel    # Intel
-            arch: x86_64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
@@ -122,7 +121,7 @@ jobs:
                   "signature": sig.read_text().strip(),
                   "url": f"{base}/{archive}",
               }
-          attendues = {"darwin-aarch64", "darwin-x86_64"}
+          attendues = {"darwin-aarch64"}
           assert set(plateformes) <= attendues, f"plateformes inattendues : {plateformes.keys()}"
           if not plateformes:
               print("No signed update archive: latest.json not published")
@@ -154,7 +153,6 @@ jobs:
             | Mac | File |
             |---|---|
             | Apple Silicon (M1–M4) | `HERMES-*-macos-arm64.dmg` |
-            | Intel | `HERMES-*-macos-x86_64.dmg` |
 
             1. Install **Ollama** first: <https://ollama.com/download> (or `brew install ollama`).
             2. Open the DMG and drag **HERMES** to **Applications**.
