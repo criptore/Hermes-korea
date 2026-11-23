@@ -124,6 +124,9 @@ async def juger(titre: str, objet: str, texte_documents: str) -> VerdictJuge | N
             max_tokens=200,
             temperature=0,
             timeout=TIMEOUT_SECONDES,
+            # Juge *local* : jamais Gemini (texte de l'AO gardé sur la machine,
+            # quota Gemini réservé à l'analyse) ; sans modèle local, il s'efface.
+            local_uniquement=True,
         )
         brut: dict[str, Any] = pythia.parser_json_sortie(reponse.texte)
         sortie = SortieJuge.model_validate(brut)

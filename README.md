@@ -283,6 +283,12 @@ and while it is on, tender text is sent to Google's Gemini API. The key is store
 encrypted (AES-256-GCM) in MNEMOSYNE, or read from `HERMES_GEMINI_API_KEY`; it is
 never written to the repository.
 
+The Gemini free tier allows about 20 requests per day and 5 per minute. HERMES
+spaces requests (`HERMES_GEMINI_INTERVALLE_MIN_S`, 12.5 s) and keeps a daily budget
+(`HERMES_GEMINI_QUOTA_JOUR`, 18 calls, reset at midnight Pacific time, 0 =
+unlimited); once it is spent, PYTHIA goes straight to the local model. The
+anti-manipulation judge always runs locally, so it never uses the Gemini quota.
+
 ### Comparing models (benchmark)
 
 `backend/scripts/banc_pythia.py` runs KRINOS on fictitious reference tenders

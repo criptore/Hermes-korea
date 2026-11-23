@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC
 
 import httpx
 import pytest
@@ -166,6 +167,56 @@ async def test_double_echec_remonte_la_cause_gemini(monkeypatch):
     message = str(exc.value)
     assert message.startswith("gemini failed:")
     assert "400" in message and "local fallback ollama failed" in message
+
+
+async def test_budget_quotidien_bascule_sur_le_local(monkeypatch, tmp_path):
+    """Budget du jour consommé : plus d'appel Gemini, repli local direct."""
+    monkeypatch.setattr(settings, "gemini_actif", True)
+    monkeypatch.setattr(settings, "gemini_api_key", CLE)
+    monkeypatch.setattr(settings, "gemini_quota_jour", 2)
+    monkeypatch.setattr(settings, "db_path", tmp_path / "h.db")
+    hotes: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hotes.append(request.url.host)
+        if request.url.host == "generativelanguage.googleapis.com":
+            return _reponse_gemini("gemini")
+        return httpx.Response(200, json={"response": "local"})
+
+    _transport(monkeypatch, handler)
+    textes = [(await pythia.generer("x")).texte for _ in range(3)]
+
+    assert textes == ["gemini", "gemini", "local"]
+    assert hotes.count("generativelanguage.googleapis.com") == 2
+    assert pythia.quota_gemini.appels_du_jour() == 2
+    assert pythia.quota_gemini.epuise()
+
+
+def test_jour_pacifique():
+    from datetime import datetime as dt
+
+    # 23/11 22h à Séoul = 23/11 05h à Los Angeles ; 24/11 16h59 Séoul = 23/11 23h59 LA.
+    assert pythia._jour_pacifique(dt(2026, 11, 23, 13, 0, tzinfo=UTC)) == "2026-11-23"
+    assert pythia._jour_pacifique(dt(2026, 11, 24, 7, 59, tzinfo=UTC)) == "2026-11-23"
+    assert pythia._jour_pacifique(dt(2026, 11, 24, 8, 0, tzinfo=UTC)) == "2026-11-24"
+
+
+async def test_juge_local_n_appelle_jamais_gemini(monkeypatch):
+    from hermes.agents.krinos import juge_local
+
+    monkeypatch.setattr(settings, "gemini_actif", True)
+    monkeypatch.setattr(settings, "gemini_api_key", CLE)
+    hotes: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hotes.append(request.url.host)
+        return httpx.Response(
+            200, json={"response": '{"manipulation": false, "passage": ""}'}
+        )
+
+    _transport(monkeypatch, handler)
+    await juge_local.juger("Titre", "Objet", "")
+    assert hotes and "generativelanguage.googleapis.com" not in hotes
 
 
 def test_route_gemini_chiffre_la_cle():

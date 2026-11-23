@@ -31,6 +31,7 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
@@ -369,6 +370,81 @@ _GEMINI_STATUTS_RETRY = ("'429 ", "'503 ")
 _GEMINI_ATTENTES_RETRY = (2.0, 8.0, 20.0)
 
 
+def _jour_pacifique(maintenant: datetime | None = None) -> str:
+    """Jour courant à l'heure du Pacifique (les quotas Google y sont remis à zéro)."""
+    from datetime import tzinfo
+
+    tz: tzinfo
+    try:
+        from zoneinfo import ZoneInfo
+
+        tz = ZoneInfo("America/Los_Angeles")
+    except Exception:  # noqa: BLE001 — base tz absente : approximation UTC-8
+        tz = timezone(timedelta(hours=-8))
+    return (maintenant or datetime.now(UTC)).astimezone(tz).date().isoformat()
+
+
+class QuotaGemini:
+    """Budget quotidien d'appels Gemini, persisté à côté de MNEMOSYNE.
+
+    Évite de dépasser le quota gratuit (20 requêtes/jour) : une fois le budget
+    consommé, PYTHIA passe directement par le modèle local jusqu'au lendemain.
+    Espace aussi les requêtes (5/minute en offre gratuite).
+    """
+
+    def __init__(self) -> None:
+        self._verrou = asyncio.Lock()
+        self._dernier_appel = 0.0
+
+    def _chemin(self):
+        return settings.db_path.parent / "gemini_quota.json"
+
+    def _lire(self) -> dict[str, Any]:
+        try:
+            data = json.loads(self._chemin().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def appels_du_jour(self) -> int:
+        data = self._lire()
+        if data.get("jour") != _jour_pacifique():
+            return 0
+        appels = data.get("appels")
+        return appels if isinstance(appels, int) and appels > 0 else 0
+
+    def epuise(self) -> bool:
+        plafond = settings.gemini_quota_jour
+        return plafond > 0 and self.appels_du_jour() >= plafond
+
+    def _consommer(self) -> None:
+        donnees = {"jour": _jour_pacifique(), "appels": self.appels_du_jour() + 1}
+        try:
+            self._chemin().parent.mkdir(parents=True, exist_ok=True)
+            self._chemin().write_text(json.dumps(donnees), encoding="utf-8")
+        except OSError as exc:  # le budget ne doit jamais bloquer PYTHIA
+            logger.warning("PYTHIA: Gemini budget not saved ({})", exc)
+
+    async def reserver(self) -> None:
+        """Réserve un appel (ou lève ErreurPythia si le budget du jour est atteint)."""
+        async with self._verrou:
+            if self.epuise():
+                raise ErreurPythia(
+                    f"Gemini daily budget reached ({settings.gemini_quota_jour} calls), "
+                    "using the local model until midnight Pacific time"
+                )
+            attente = settings.gemini_intervalle_min_s - (
+                time.monotonic() - self._dernier_appel
+            )
+            if self._dernier_appel and attente > 0:
+                await asyncio.sleep(attente)
+            self._dernier_appel = time.monotonic()
+            self._consommer()
+
+
+quota_gemini = QuotaGemini()
+
+
 def gemini_pret() -> bool:
     """Vrai si Gemini est activé et qu'une clé est disponible."""
     return settings.gemini_actif and bool(settings.gemini_api_key.strip())
@@ -390,6 +466,7 @@ class MoteurGemini:
     async def generer(self, requete: RequetePythia) -> ReponsePythia:
         timeout = min(requete.timeout or GEMINI_TIMEOUT_MAX, GEMINI_TIMEOUT_MAX)
         en_tetes = {"Authorization": f"Bearer {settings.gemini_api_key.strip()}"}
+        await quota_gemini.reserver()
         debut = time.perf_counter()
         for tentative in range(1, len(_GEMINI_ATTENTES_RETRY) + 2):
             try:
@@ -509,6 +586,7 @@ async def generer(
     timeout: float | None = None,
     think: bool | None = None,
     options: dict[str, Any] | None = None,
+    local_uniquement: bool = False,
 ) -> ReponsePythia:
     """Génère une réponse via le moteur actif et renvoie la sortie textuelle.
 
@@ -525,6 +603,9 @@ async def generer(
     `think` (alias de `raisonnement`) et `options` (`num_predict`, `num_ctx` et
     `temperature` traduits vers les paramètres neutres, le reste réservé à
     Ollama) sont DÉPRÉCIÉS : ils subsistent le temps de migrer les appelants.
+
+    `local_uniquement` force le moteur local (jamais Gemini) : contrôles annexes
+    qui ne doivent ni quitter la machine ni consommer le quota Gemini.
     """
     options_ollama = dict(options or {})
     num_predict = options_ollama.pop("num_predict", None)
@@ -554,7 +635,8 @@ async def generer(
         options_ollama=options_ollama,
         timeout=_timeout_effectif(timeout),
     )
-    return await moteur_actif().generer(requete)
+    moteur = moteur_local() if local_uniquement else moteur_actif()
+    return await moteur.generer(requete)
 
 
 async def embeddings(
